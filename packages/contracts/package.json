@@ -1,0 +1,35 @@
+{
+  "name": "@vicam/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    }
+  },
+  "scripts": {
+    "build": "pnpm generate && tsc -p tsconfig.json",
+    "generate": "pnpm openapi && openapi-typescript openapi.json -o src/generated/schema.ts && prettier --write openapi.json src/generated/schema.ts",
+    "openapi": "tsx src/openapi.ts",
+    "test": "vitest run",
+    "typecheck": "pnpm generate && tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@asteasolutions/zod-to-openapi": "9.1.0",
+    "openapi-fetch": "0.17.0",
+    "openapi3-ts": "4.6.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.1",
+    "openapi-typescript": "7.13.0",
+    "tsx": "4.23.1",
+    "vitest": "4.1.10"
+  }
+}

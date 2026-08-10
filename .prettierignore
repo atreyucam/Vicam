@@ -1,0 +1,16 @@
+AGENTS.md
+PLANS.md
+GUIA_CODEX_APP_ESCRITORIO.md
+PROMPT_MAESTRO_CODEX_DESKTOP.md
+docs/01_SRS_VICAM_v1.0.md
+docs/02_ARQUITECTURA_BD_API_VICAM_v2.0.md
+docs/03_FRONTEND_TESTING_DESPLIEGUE_VICAM_v1.0.md
+docs/04_DESIGN_SYSTEM_VICAM_v1.0.md
+docs/05_DECISIONES_VICAM_D01_D80.md
+node_modules/
+dist/
+coverage/
+**/playwright-report*/
+**/test-results/
+**/test-results-*/
+packages/contracts/openapi.json

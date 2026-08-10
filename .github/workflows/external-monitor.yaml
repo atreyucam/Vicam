@@ -1,0 +1,29 @@
+name: External monitor
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vicam-external-monitor
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    if: ${{ vars.VICAM_MONITOR_URL != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Checkout monitor code
+        uses: actions/checkout@v4
+      - name: Probe live, readiness and TLS
+        env:
+          VICAM_MONITOR_URL: ${{ vars.VICAM_MONITOR_URL }}
+          VICAM_MONITOR_TIMEOUT_MS: ${{ vars.VICAM_MONITOR_TIMEOUT_MS }}
+          VICAM_MONITOR_MIN_CERT_DAYS: ${{ vars.VICAM_MONITOR_MIN_CERT_DAYS }}
+          VICAM_MONITOR_WEBHOOK_URL: ${{ secrets.VICAM_MONITOR_WEBHOOK_URL }}
+        run: node infra/scripts/monitor.mjs

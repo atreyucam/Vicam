@@ -1,0 +1,5 @@
+# Producción usa exactamente el mismo grafo que staging. Cambie únicamente el
+# archivo de entorno protegido; nunca reutilice datos, claves o volúmenes.
+name: vicam-production
+include:
+  - path: compose.staging.yaml

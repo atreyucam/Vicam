@@ -1,0 +1,26 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "composite": true,
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "paths": {
+      "@vicam/contracts": ["../../packages/contracts/dist/index.d.ts"],
+      "@vicam/contracts/client": ["../../packages/contracts/src/client.ts"]
+    },
+    "noEmit": true,
+    "types": [
+      "vite/client",
+      "vite-plugin-pwa/client",
+      "vitest/globals",
+      "@testing-library/jest-dom"
+    ]
+  },
+  "include": [
+    "src",
+    "../../packages/contracts/src/client.ts",
+    "../../packages/contracts/src/generated/schema.ts"
+  ]
+}

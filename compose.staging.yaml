@@ -1,0 +1,234 @@
+name: vicam-staging
+
+x-logging: &logging
+  driver: local
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-node: &node
+  init: true
+  restart: unless-stopped
+  read_only: true
+  tmpfs:
+    - /tmp:rw,noexec,nosuid,size=64m
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  networks:
+    - private
+  logging: *logging
+
+services:
+  postgres:
+    image: postgres:18-alpine@sha256:9a8afca54e7861fd90fab5fdf4c42477a6b1cb7d293595148e674e0a3181de15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${VICAM_POSTGRES_DB:?set in protected staging env file}
+      POSTGRES_USER: ${VICAM_POSTGRES_USER:?set in protected staging env file}
+      POSTGRES_PASSWORD: ${VICAM_POSTGRES_PASSWORD:?set in protected staging env file}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    security_opt: ["no-new-privileges:true"]
+    networks: [private]
+    logging: *logging
+
+  clamav:
+    image: clamav/clamav:1.4.5_base-debian@sha256:905e2fd40d121a808c62d35d5a6dce2f1c3850cb22559ac74a8ea5a18144be7e
+    user: clamav
+    entrypoint: ["/init-unprivileged"]
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m,mode=1777
+      - /var/log/clamav:rw,noexec,nosuid,size=16m,uid=1000,gid=1000,mode=0750
+    volumes:
+      - clamav_data:/var/lib/clamav
+    healthcheck:
+      test: ["CMD-SHELL", "clamdscan --ping 1 --config-file=/etc/clamav/clamd.conf"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 180s
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    networks: [private, clamav_updates]
+    logging: *logging
+
+  api:
+    <<: *node
+    image: ${VICAM_API_IMAGE:?GHCR image pinned by digest}
+    environment:
+      NODE_ENV: production
+      API_PORT: "3000"
+      APP_ORIGIN: https://${VICAM_PUBLIC_HOST:?staging host}
+      AUTH_SECRET: ${VICAM_AUTH_SECRET:?protected secret}
+      CADDY_TRUSTED_PROXIES: 172.29.0.10/32
+      LOG_LEVEL: ${VICAM_LOG_LEVEL:-info}
+      OFFLINE_SYNC_ENABLED: ${VICAM_OFFLINE_SYNC_ENABLED:-true}
+      DOCUMENT_STORAGE_ROOT: /srv/vicam
+      CLAMD_HOST: ${VICAM_CLAMD_HOST:-clamav}
+      CLAMD_PORT: ${VICAM_CLAMD_PORT:-3310}
+      DATABASE_URL: postgresql://${VICAM_POSTGRES_USER}:${VICAM_POSTGRES_PASSWORD}@postgres:5432/${VICAM_POSTGRES_DB}
+    volumes:
+      - documents_data:/srv/vicam
+    depends_on:
+      postgres: { condition: service_healthy }
+      clamav: { condition: service_healthy }
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/v1/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  worker:
+    <<: *node
+    image: ${VICAM_WORKER_IMAGE:?GHCR image pinned by digest}
+    environment:
+      NODE_ENV: production
+      WORKER_HEALTH_PORT: "3001"
+      LOG_LEVEL: ${VICAM_LOG_LEVEL:-info}
+      DOCUMENT_STORAGE_ROOT: /srv/vicam
+      CLAMD_HOST: ${VICAM_CLAMD_HOST:-clamav}
+      CLAMD_PORT: ${VICAM_CLAMD_PORT:-3310}
+      VAPID_SUBJECT: ${VICAM_VAPID_SUBJECT:?protected VAPID subject}
+      VAPID_PUBLIC_KEY: ${VICAM_VAPID_PUBLIC_KEY:?protected VAPID public key}
+      VAPID_PRIVATE_KEY: ${VICAM_VAPID_PRIVATE_KEY:?protected VAPID private key}
+      DATABASE_URL: postgresql://${VICAM_POSTGRES_USER}:${VICAM_POSTGRES_PASSWORD}@postgres:5432/${VICAM_POSTGRES_DB}
+    volumes:
+      - documents_data:/srv/vicam
+    depends_on:
+      postgres: { condition: service_healthy }
+      clamav: { condition: service_healthy }
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  web:
+    <<: *node
+    image: ${VICAM_WEB_IMAGE:?GHCR image pinned by digest}
+    environment:
+      NODE_ENV: production
+      VICAM_OFFLINE_SYNC_ENABLED: ${VICAM_OFFLINE_SYNC_ENABLED:-true}
+      VICAM_MAPLIBRE_STYLE_URL: ${VICAM_MAPLIBRE_STYLE_URL:-}
+      VICAM_MAPLIBRE_API_KEY: ${VICAM_MAPLIBRE_API_KEY:-}
+      VICAM_VAPID_PUBLIC_KEY: ${VICAM_VAPID_PUBLIC_KEY:?environment VAPID public key}
+    tmpfs:
+      - /workspace/apps/web/dist/runtime:rw,noexec,nosuid,size=1m,uid=1000,gid=1000,mode=0700
+    depends_on: { api: { condition: service_healthy } }
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:4173/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  backup:
+    image: ${VICAM_BACKUP_IMAGE:?GHCR image pinned by digest}
+    restart: unless-stopped
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: ${VICAM_POSTGRES_DB}
+      PGUSER: ${VICAM_POSTGRES_USER}
+      PGPASSWORD: ${VICAM_POSTGRES_PASSWORD}
+      BACKUP_RETENTION_DAYS: ${VICAM_BACKUP_RETENTION_DAYS:-14}
+      BACKUP_INTERVAL_SECONDS: ${VICAM_BACKUP_INTERVAL_SECONDS:-86400}
+      BACKUP_HEALTH_MAX_AGE_MINUTES: ${VICAM_BACKUP_HEALTH_MAX_AGE_MINUTES:-1500}
+    volumes:
+      - backups_data:/backups
+      - documents_data:/documents:ro
+    depends_on: { postgres: { condition: service_healthy } }
+    read_only: true
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=64m"]
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'test -f /backups/backup-status && grep -q ''"status":"ok"'' /backups/backup-status && find /backups/backup-status -mmin -$${BACKUP_HEALTH_MAX_AGE_MINUTES} -print -quit | grep -q .',
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    networks: [private]
+    logging: *logging
+
+  caddy:
+    image: caddy:2-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      VICAM_SITE_ADDRESS: ${VICAM_PUBLIC_HOST:?public host}
+      CADDY_EMAIL: ${VICAM_CADDY_EMAIL:?operations email}
+      VICAM_CSP_MAP_CONNECT_SRC: ${VICAM_CSP_MAP_CONNECT_SRC:?CSP connect-src map provider allowlist}
+      VICAM_CSP_MAP_IMG_SRC: ${VICAM_CSP_MAP_IMG_SRC:?CSP img-src map provider allowlist}
+    volumes:
+      - ./infra/caddy/Caddyfile.tls:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api: { condition: service_healthy }
+      web: { condition: service_healthy }
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-check-certificate --quiet --output-document=- --header='Host: $$VICAM_SITE_ADDRESS' https://127.0.0.1/health/live",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    networks:
+      edge: {}
+      private: { ipv4_address: 172.29.0.10 }
+    logging: *logging
+
+networks:
+  edge: {}
+  clamav_updates: {}
+  private:
+    internal: true
+    ipam: { config: [{ subnet: 172.29.0.0/24 }] }
+
+volumes:
+  postgres_data: {}
+  clamav_data: {}
+  backups_data: {}
+  documents_data: {}
+  caddy_data: {}
+  caddy_config: {}

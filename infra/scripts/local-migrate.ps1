@@ -1,0 +1,18 @@
+[CmdletBinding()]
+param(
+  [string]$EnvFile = "infra/env/local.env.example"
+)
+
+$ErrorActionPreference = "Stop"
+$workspaceRoot = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
+$resolvedEnvFile = (Resolve-Path (Join-Path $workspaceRoot $EnvFile)).Path
+
+Push-Location $workspaceRoot
+try {
+  docker compose --env-file $resolvedEnvFile up --detach --wait postgres
+  docker compose --env-file $resolvedEnvFile build api
+  docker compose --env-file $resolvedEnvFile run --rm api node packages/db/dist/migrate-cli.js
+}
+finally {
+  Pop-Location
+}

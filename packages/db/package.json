@@ -1,0 +1,39 @@
+{
+  "name": "@vicam/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./schema": {
+      "types": "./dist/schema.d.ts",
+      "default": "./dist/schema.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "db:generate": "drizzle-kit generate --config drizzle.config.ts",
+    "db:migrate": "tsx src/migrate-cli.ts",
+    "db:seed": "tsx src/seed-cli.ts",
+    "test": "vitest run",
+    "test:integration": "cross-env VICAM_RUN_DB_INTEGRATION=1 vitest run src/migration.integration.test.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "drizzle-orm": "0.45.2",
+    "pg": "8.22.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@testcontainers/postgresql": "12.0.4",
+    "@types/node": "26.1.1",
+    "@types/pg": "8.20.0",
+    "cross-env": "10.1.0",
+    "drizzle-kit": "0.31.10",
+    "tsx": "4.23.1",
+    "vitest": "4.1.10"
+  }
+}
