@@ -288,7 +288,7 @@ test("Contraseña temporal bloquea URLs de negocio y libera la sesión después 
   await expect(page).toHaveURL(/\/app$/);
   expect(changeBody).toEqual({ currentPassword: "Temporal!123", newPassword: "Personal!456" });
 
-  await page.goto("/change-password");
+  await page.goto("/change-password", { waitUntil: "commit" });
   await expect(page).toHaveURL(/\/app$/);
   await expect(page.getByRole("heading", { name: "Inicio" })).toBeVisible();
 });
