@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-ARG NODE_IMAGE=node:24-alpine@sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432d679c54fbfd
+ARG NODE_IMAGE=node:24-alpine@sha256:d32cdf619f63fe0471182d08996dd516c6275bb5fd31ae06e55a570bd9e1ad43
 
 FROM ${NODE_IMAGE} AS pnpm-base
 ENV PNPM_HOME=/pnpm
@@ -11,10 +11,16 @@ FROM pnpm-base AS build
 COPY . .
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 RUN pnpm --filter @vicam/api build
+RUN pnpm --filter @vicam/api deploy --prod /prod/apps/api \
+    && pnpm --filter @vicam/db deploy --prod /prod/packages/db
 
-FROM pnpm-base AS runtime
+FROM ${NODE_IMAGE} AS runtime
 ENV NODE_ENV=production
-COPY --from=build --chown=node:node /workspace /workspace
+WORKDIR /workspace
+RUN rm -rf /opt/yarn-* /usr/local/lib/node_modules/corepack /usr/local/lib/node_modules/npm \
+    && rm -f /usr/local/bin/corepack /usr/local/bin/npm /usr/local/bin/npx \
+      /usr/local/bin/yarn /usr/local/bin/yarnpkg
+COPY --from=build --chown=node:node /prod /workspace
 RUN mkdir -p /srv/vicam/documents /srv/vicam/operations \
     && chown -R node:node /srv/vicam
 USER node
