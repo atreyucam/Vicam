@@ -13,6 +13,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createApp } from "./app.js";
 import { readApiConfig } from "./config.js";
+import { closeIntegrationPool } from "./integration-test-support.js";
 import { createLogger } from "./logger.js";
 
 const integration = process.env.VICAM_RUN_DB_INTEGRATION === "1" ? describe : describe.skip;
@@ -65,7 +66,7 @@ integration("Phase 4 backend validation", () => {
   }, 120_000);
 
   afterAll(async () => {
-    await pool?.end();
+    if (pool) await closeIntegrationPool(pool);
     await container?.stop();
     if (storageRoot) await rm(storageRoot, { recursive: true, force: true });
   });

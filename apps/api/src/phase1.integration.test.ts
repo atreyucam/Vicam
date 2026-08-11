@@ -10,6 +10,7 @@ import { createApp } from "./app.js";
 import { readApiConfig } from "./config.js";
 import { executeManagerPasswordReset } from "./cli/reset-manager-password.js";
 import { requestHash } from "./db.js";
+import { closeIntegrationPool } from "./integration-test-support.js";
 
 const integration = process.env.VICAM_RUN_DB_INTEGRATION === "1" ? describe : describe.skip;
 const origin = "http://localhost:5173";
@@ -110,7 +111,7 @@ integration("Phase 1 online API", () => {
   }, 120_000);
 
   afterAll(async () => {
-    await pool?.end();
+    if (pool) await closeIntegrationPool(pool);
     await container?.stop();
   });
 
