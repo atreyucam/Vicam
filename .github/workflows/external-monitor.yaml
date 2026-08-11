@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 2
     steps:
       - name: Checkout monitor code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Probe live, readiness and TLS
         env:
           VICAM_MONITOR_URL: ${{ vars.VICAM_MONITOR_URL }}
