@@ -89,9 +89,12 @@ test("Fases 2 a 4 atraviesan PWA, Caddy, API, worker, ClamAV y PostgreSQL reales
   await navigate(page, "/app/reports");
   await page.getByRole("tab", { name: "Clientes" }).click();
   await page.getByRole("button", { name: "Exportar" }).click();
-  await page.getByRole("dialog", { name: "Exportar reporte" }).getByRole("button", {
-    name: "Exportar PDF",
-  }).click();
+  await page
+    .getByRole("dialog", { name: "Exportar reporte" })
+    .getByRole("button", {
+      name: "Exportar PDF",
+    })
+    .click();
   await expect(page.getByRole("dialog", { name: "Exportar reporte" })).toBeHidden();
   let reportId = "";
   await expect
