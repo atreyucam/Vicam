@@ -279,6 +279,15 @@ export interface paths {
             "application/json": components["schemas"]["ErrorEnvelope"];
           };
         };
+        /** @description Unexpected server error. */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
         /** @description Service unavailable or feature disabled by an operational rollback flag. */
         503: {
           headers: {
@@ -380,6 +389,15 @@ export interface paths {
             "application/json": components["schemas"]["ErrorEnvelope"];
           };
         };
+        /** @description Unexpected server error. */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
         /** @description Service unavailable or feature disabled by an operational rollback flag. */
         503: {
           headers: {
@@ -466,6 +484,15 @@ export interface paths {
         };
         /** @description Business validation failed. */
         422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
+        /** @description Unexpected server error. */
+        500: {
           headers: {
             [name: string]: unknown;
           };
@@ -708,6 +735,15 @@ export interface paths {
             "application/json": components["schemas"]["ErrorEnvelope"];
           };
         };
+        /** @description Unexpected server error. */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
         /** @description Service unavailable or feature disabled by an operational rollback flag. */
         503: {
           headers: {
@@ -846,6 +882,15 @@ export interface paths {
             "application/json": components["schemas"]["ErrorEnvelope"];
           };
         };
+        /** @description Unexpected server error. */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
         /** @description Service unavailable or feature disabled by an operational rollback flag. */
         503: {
           headers: {
@@ -936,6 +981,15 @@ export interface paths {
         };
         /** @description Business validation failed. */
         422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
+        /** @description Unexpected server error. */
+        500: {
           headers: {
             [name: string]: unknown;
           };
@@ -1037,6 +1091,15 @@ export interface paths {
         };
         /** @description Business validation failed. */
         422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
+        /** @description Unexpected server error. */
+        500: {
           headers: {
             [name: string]: unknown;
           };
@@ -1170,6 +1233,15 @@ export interface paths {
             "application/json": components["schemas"]["ErrorEnvelope"];
           };
         };
+        /** @description Unexpected server error. */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
         /** @description Service unavailable or feature disabled by an operational rollback flag. */
         503: {
           headers: {
@@ -1252,6 +1324,15 @@ export interface paths {
         };
         /** @description Business validation failed. */
         422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
+        /** @description Unexpected server error. */
+        500: {
           headers: {
             [name: string]: unknown;
           };
@@ -1346,6 +1427,15 @@ export interface paths {
             "application/json": components["schemas"]["ErrorEnvelope"];
           };
         };
+        /** @description Unexpected server error. */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
         /** @description Service unavailable or feature disabled by an operational rollback flag. */
         503: {
           headers: {
@@ -1431,6 +1521,15 @@ export interface paths {
             "application/json": components["schemas"]["ErrorEnvelope"];
           };
         };
+        /** @description Unexpected server error. */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
         /** @description Service unavailable or feature disabled by an operational rollback flag. */
         503: {
           headers: {
@@ -1507,6 +1606,15 @@ export interface paths {
         };
         /** @description Business validation failed. */
         422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
+        /** @description Unexpected server error. */
+        500: {
           headers: {
             [name: string]: unknown;
           };
@@ -1616,6 +1724,15 @@ export interface paths {
             "application/json": components["schemas"]["ErrorEnvelope"];
           };
         };
+        /** @description Unexpected server error. */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
         /** @description Service unavailable or feature disabled by an operational rollback flag. */
         503: {
           headers: {
@@ -1694,6 +1811,15 @@ export interface paths {
         };
         /** @description Business validation failed. */
         422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
+        /** @description Unexpected server error. */
+        500: {
           headers: {
             [name: string]: unknown;
           };
@@ -1834,6 +1960,15 @@ export interface paths {
             "application/json": components["schemas"]["ErrorEnvelope"];
           };
         };
+        /** @description Unexpected server error. */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
         /** @description Service unavailable or feature disabled by an operational rollback flag. */
         503: {
           headers: {
@@ -1916,6 +2051,15 @@ export interface paths {
         };
         /** @description Business validation failed. */
         422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
+        /** @description Unexpected server error. */
+        500: {
           headers: {
             [name: string]: unknown;
           };
@@ -2010,6 +2154,15 @@ export interface paths {
             "application/json": components["schemas"]["ErrorEnvelope"];
           };
         };
+        /** @description Unexpected server error. */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
         /** @description Service unavailable or feature disabled by an operational rollback flag. */
         503: {
           headers: {
@@ -2096,6 +2249,15 @@ export interface paths {
         };
         /** @description Business validation failed. */
         422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
+        /** @description Unexpected server error. */
+        500: {
           headers: {
             [name: string]: unknown;
           };
@@ -2200,6 +2362,15 @@ export interface paths {
             "application/json": components["schemas"]["ErrorEnvelope"];
           };
         };
+        /** @description Unexpected server error. */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
         /** @description Service unavailable or feature disabled by an operational rollback flag. */
         503: {
           headers: {
@@ -2290,6 +2461,15 @@ export interface paths {
         };
         /** @description Business validation failed. */
         422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
+        /** @description Unexpected server error. */
+        500: {
           headers: {
             [name: string]: unknown;
           };
@@ -2429,6 +2609,15 @@ export interface paths {
             "application/json": components["schemas"]["ErrorEnvelope"];
           };
         };
+        /** @description Unexpected server error. */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
         /** @description Service unavailable or feature disabled by an operational rollback flag. */
         503: {
           headers: {
@@ -2518,6 +2707,15 @@ export interface paths {
             "application/json": components["schemas"]["ErrorEnvelope"];
           };
         };
+        /** @description Unexpected server error. */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
         /** @description Service unavailable or feature disabled by an operational rollback flag. */
         503: {
           headers: {
@@ -2598,6 +2796,15 @@ export interface paths {
         };
         /** @description Business validation failed. */
         422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
+        /** @description Unexpected server error. */
+        500: {
           headers: {
             [name: string]: unknown;
           };
@@ -2698,6 +2905,15 @@ export interface paths {
             "application/json": components["schemas"]["ErrorEnvelope"];
           };
         };
+        /** @description Unexpected server error. */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
         /** @description Service unavailable or feature disabled by an operational rollback flag. */
         503: {
           headers: {
@@ -2788,6 +3004,15 @@ export interface paths {
         };
         /** @description Business validation failed. */
         422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
+        /** @description Unexpected server error. */
+        500: {
           headers: {
             [name: string]: unknown;
           };
@@ -2962,6 +3187,15 @@ export interface paths {
             "application/json": components["schemas"]["ErrorEnvelope"];
           };
         };
+        /** @description Unexpected server error. */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
         /** @description Service unavailable or feature disabled by an operational rollback flag. */
         503: {
           headers: {
@@ -3045,6 +3279,15 @@ export interface paths {
         };
         /** @description Business validation failed. */
         422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
+        /** @description Unexpected server error. */
+        500: {
           headers: {
             [name: string]: unknown;
           };
@@ -3150,6 +3393,15 @@ export interface paths {
         };
         /** @description Business validation failed. */
         422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
+        /** @description Unexpected server error. */
+        500: {
           headers: {
             [name: string]: unknown;
           };
@@ -3288,6 +3540,15 @@ export interface paths {
             "application/json": components["schemas"]["ErrorEnvelope"];
           };
         };
+        /** @description Unexpected server error. */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
         /** @description Service unavailable or feature disabled by an operational rollback flag. */
         503: {
           headers: {
@@ -3403,6 +3664,15 @@ export interface paths {
             "application/json": components["schemas"]["ErrorEnvelope"];
           };
         };
+        /** @description Unexpected server error. */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
         /** @description Service unavailable or feature disabled by an operational rollback flag. */
         503: {
           headers: {
@@ -3502,6 +3772,15 @@ export interface paths {
         };
         /** @description Business validation failed. */
         422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
+        /** @description Unexpected server error. */
+        500: {
           headers: {
             [name: string]: unknown;
           };
@@ -3621,6 +3900,15 @@ export interface paths {
         };
         /** @description Business validation failed. */
         422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
+        /** @description Unexpected server error. */
+        500: {
           headers: {
             [name: string]: unknown;
           };
@@ -3754,6 +4042,15 @@ export interface paths {
         };
         /** @description Business validation failed. */
         422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
+        /** @description Unexpected server error. */
+        500: {
           headers: {
             [name: string]: unknown;
           };
@@ -4499,6 +4796,95 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/reports/analytics/{view}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          page?: number;
+          pageSize?: number;
+          from?: string;
+          to?: string;
+          timezone?: "America/Guayaquil";
+          responsibleUserId?: string;
+          accountId?: string;
+          city?: string;
+          visitStatus?: "PENDING" | "COMPLETED" | "CANCELLED";
+          taskStatus?: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+          priority?: "LOW" | "MEDIUM" | "HIGH";
+          overdue?: string;
+          accountStatus?: "ACTIVE" | "ARCHIVED";
+          categoryId?: string;
+          documentStatus?: "QUARANTINED" | "SCANNING" | "AVAILABLE" | "REJECTED" | "DELETED";
+        };
+        header?: never;
+        path: {
+          view: "summary" | "visits" | "tasks" | "accounts" | "documents";
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Filtered operational analytics for the selected report view. */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ReportAnalyticsResponse"];
+          };
+        };
+        /** @description Authentication required or session expired. */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
+        /** @description Insufficient role or ownership. */
+        403: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
+        /** @description Business validation failed. */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
+        /** @description Unexpected server error. */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/reports/exports": {
     parameters: {
       query?: never;
@@ -4807,6 +5193,15 @@ export interface paths {
         };
         /** @description Business validation failed. */
         422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorEnvelope"];
+          };
+        };
+        /** @description Unexpected server error. */
+        500: {
           headers: {
             [name: string]: unknown;
           };
@@ -5670,6 +6065,69 @@ export interface components {
       endpoint: string;
       p256dh: string;
       auth: string;
+    };
+    ReportAnalyticsResponse: {
+      /** @enum {string} */
+      view: "summary" | "visits" | "tasks" | "accounts" | "documents";
+      kpis: components["schemas"]["ReportKpi"][];
+      trend: components["schemas"]["ReportSeriesPoint"][];
+      distribution: components["schemas"]["ReportSeriesPoint"][];
+      secondaryDistribution: components["schemas"]["ReportSeriesPoint"][];
+      responsibleActivity: components["schemas"]["ReportResponsibleActivity"][];
+      attention: components["schemas"]["ReportAttentionItem"][];
+      rows: components["schemas"]["ReportTableRow"][];
+      pagination: components["schemas"]["PaginationMeta"];
+    };
+    ReportKpi: {
+      key: string;
+      label: string;
+      value: number;
+      /** @enum {string} */
+      format: "NUMBER" | "PERCENT";
+    };
+    ReportSeriesPoint: {
+      key: string;
+      label: string;
+      value: number;
+      secondaryValue?: number;
+    };
+    ReportResponsibleActivity: {
+      /** Format: uuid */
+      userId: string;
+      name: string;
+      total: number;
+      completed: number;
+      open: number;
+      overdue: number;
+      compliancePercent: number | null;
+    };
+    ReportAttentionItem: {
+      /** @enum {string} */
+      kind: "VISIT" | "TASK" | "ACCOUNT" | "DOCUMENT";
+      /** Format: uuid */
+      id: string;
+      title: string;
+      detail: string;
+      date: string | null;
+      href: string;
+    };
+    ReportTableRow: {
+      /** Format: uuid */
+      id: string;
+      /** @enum {string} */
+      kind: "VISIT" | "TASK" | "ACCOUNT" | "DOCUMENT";
+      title: string;
+      date: string | null;
+      accountName: string | null;
+      responsibleName: string | null;
+      status: string | null;
+      priority: string | null;
+      city: string | null;
+      category: string | null;
+      format: string | null;
+      total: number | null;
+      secondary: string | null;
+      href: string;
     };
     ReportExportsPage: {
       items: components["schemas"]["ReportExport"][];

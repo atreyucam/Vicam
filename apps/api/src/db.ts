@@ -204,7 +204,8 @@ export async function writeAudit(client: DbClient, input: AuditInput): Promise<v
   const retentionClass =
     /^(LOGIN_|SESSION_|PASSWORD_)/.test(input.action) ||
     input.action === "USER_PASSWORD_RESET" ||
-    input.action === "MANAGER_PASSWORD_RESET_CLI"
+    input.action === "MANAGER_PASSWORD_RESET_CLI" ||
+    input.action === "MANAGER_BOOTSTRAPPED_CLI"
       ? "SECURITY"
       : "FUNCTIONAL";
   await client.query(

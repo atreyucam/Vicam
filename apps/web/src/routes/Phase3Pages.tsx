@@ -1,11 +1,4 @@
-import type {
-  AppSettings,
-  Document,
-  ImportBatch,
-  Notification,
-  ReportExport,
-  User,
-} from "@vicam/contracts";
+import type { AppSettings, Document, ImportBatch, Notification, User } from "@vicam/contracts";
 import {
   Button,
   ButtonLink,
@@ -26,8 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
-  FileSpreadsheet,
-  FileText,
+  KeyRound,
   ShieldCheck,
   Upload,
   Pencil,
@@ -114,7 +106,7 @@ export function DocumentsPage({ accountId: providedAccountId }: { accountId?: st
               ))}
             </Select>
           </div>
-          <DocumentUpload onUploaded={state.reload} />
+          <DocumentUpload accountId={accountId} onUploaded={state.reload} />
           {items.length ? (
             <div className="phase-list">
               {items.map((item) => (
@@ -155,6 +147,7 @@ function DocumentActions({ item, onChanged }: { item: Document; onChanged: () =>
   const [action, setAction] = useState<"archive" | "restore" | null>(null);
   const [working, setWorking] = useState(false);
   const [message, setMessage] = useState<string>();
+  const [downloading, setDownloading] = useState(false);
   const intent = useIdempotencyKeyController();
 
   async function confirm() {
@@ -184,18 +177,38 @@ function DocumentActions({ item, onChanged }: { item: Document; onChanged: () =>
     }
   }
 
+  async function download() {
+    setDownloading(true);
+    setMessage(undefined);
+    try {
+      const blob = unwrap(
+        await api.GET("/documents/{id}/download", {
+          params: { path: { id: item.id } },
+          parseAs: "blob",
+        }),
+      );
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = item.originalName;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      setMessage(error instanceof ApiError ? error.message : "No se pudo descargar el documento.");
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   return (
     <>
       <div className="row-actions">
         {item.status === "AVAILABLE" ? (
           <>
-            <a
-              className="vicam-button vicam-button--secondary"
-              href={`/api/v1/documents/${item.id}/download`}
-            >
+            <Button loading={downloading} onClick={() => void download()} variant="secondary">
               <Download aria-hidden="true" size={16} />
               Descargar
-            </a>
+            </Button>
             <Button onClick={() => setAction("archive")} variant="secondary">
               <Archive aria-hidden="true" size={16} />
               Archivar
@@ -242,12 +255,18 @@ function DocumentActions({ item, onChanged }: { item: Document; onChanged: () =>
   );
 }
 
-function DocumentUpload({ onUploaded }: { onUploaded: () => void }) {
-  const accountId = new URLSearchParams(window.location.search).get("accountId");
+function DocumentUpload({
+  accountId,
+  onUploaded,
+}: {
+  accountId: string | undefined;
+  onUploaded: () => void;
+}) {
   const categories = useAsync(async () => unwrap(await api.GET("/document-categories")), []);
   const [file, setFile] = useState<File | null>(null);
   const [categoryId, setCategoryId] = useState("");
   const [message, setMessage] = useState<string>();
+  const [busy, setBusy] = useState(false);
   const intent = useIdempotencyKeyController();
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -256,25 +275,33 @@ function DocumentUpload({ onUploaded }: { onUploaded: () => void }) {
       setMessage("Selecciona un PDF, DOCX o XLSX de máximo 10 MB.");
       return;
     }
-    unwrap(
-      await api.POST("/commercial-accounts/{id}/documents", {
-        params: { path: { id: accountId }, ...idempotencyParams(intent.current()) },
-        body: { file, categoryId },
-        bodySerializer(body) {
-          const formData = new FormData();
-          if (!body) return formData;
-          if (body.file instanceof File) formData.set("file", body.file);
-          formData.set("categoryId", body.categoryId);
-          if (body.visitId) formData.set("visitId", body.visitId);
-          if (body.taskId) formData.set("taskId", body.taskId);
-          return formData;
-        },
-      }),
-    );
-    setMessage("Documento enviado a cuarentena para análisis.");
-    intent.rotate();
-    setFile(null);
-    onUploaded();
+    setBusy(true);
+    setMessage(undefined);
+    try {
+      unwrap(
+        await api.POST("/commercial-accounts/{id}/documents", {
+          params: { path: { id: accountId }, ...idempotencyParams(intent.current()) },
+          body: { file, categoryId },
+          bodySerializer(body) {
+            const formData = new FormData();
+            if (!body) return formData;
+            if (body.file instanceof File) formData.set("file", body.file);
+            formData.set("categoryId", body.categoryId);
+            if (body.visitId) formData.set("visitId", body.visitId);
+            if (body.taskId) formData.set("taskId", body.taskId);
+            return formData;
+          },
+        }),
+      );
+      setMessage("Documento enviado a cuarentena para análisis.");
+      intent.rotate();
+      setFile(null);
+      onUploaded();
+    } catch (error) {
+      setMessage(error instanceof ApiError ? error.message : "No se pudo cargar el documento.");
+    } finally {
+      setBusy(false);
+    }
   }
   if (!accountId)
     return (
@@ -312,7 +339,7 @@ function DocumentUpload({ onUploaded }: { onUploaded: () => void }) {
               ))}
           </Select>
           {message ? <p role="status">{message}</p> : null}
-          <Button disabled={!file || !categoryId} type="submit">
+          <Button disabled={!file || !categoryId} loading={busy} type="submit">
             <Upload aria-hidden="true" />
             Enviar a análisis
           </Button>
@@ -488,335 +515,6 @@ function PushEducationCard() {
         {result?.kind === "active" ? "Notificaciones activas" : "Activar notificaciones"}
       </Button>
     </Card>
-  );
-}
-
-const reportGroups = [
-  {
-    value: "VISITS",
-    label: "Visitas",
-    description: "Agenda, realizadas, canceladas, reprogramadas y productividad.",
-    templates: ["agenda", "completed", "cancelled-rescheduled", "productivity"],
-  },
-  {
-    value: "TASKS",
-    label: "Tareas",
-    description: "Abiertas, vencidas, completadas y carga por responsable.",
-    templates: ["open", "overdue", "completed", "workload"],
-  },
-  {
-    value: "ACCOUNTS",
-    label: "Clientes",
-    description: "Directorio, seguimiento reciente y agrupación comercial.",
-    templates: ["directory", "stale", "by-fruit-location-owner"],
-  },
-  {
-    value: "DOCUMENTS",
-    label: "Documentos",
-    description: "Inventario, categorías y próximas revisiones.",
-    templates: ["inventory", "by-category", "review-due"],
-  },
-  {
-    value: "MANAGEMENT",
-    label: "Resumen gerencial",
-    description: "KPIs y actividad consolidada del periodo.",
-    templates: ["kpis", "period-activity"],
-  },
-] as const;
-const reportTemplateLabels: Record<string, string> = {
-  agenda: "Agenda",
-  completed: "Completadas",
-  "cancelled-rescheduled": "Canceladas y reprogramadas",
-  productivity: "Productividad",
-  open: "Abiertas",
-  overdue: "Vencidas",
-  workload: "Carga por responsable",
-  directory: "Directorio",
-  stale: "Sin visita reciente",
-  "by-fruit-location-owner": "Por fruta, ubicación y responsable",
-  inventory: "Inventario",
-  "by-category": "Por categoría",
-  "review-due": "Próximas a revisión",
-  kpis: "Indicadores clave",
-  "period-activity": "Actividad del periodo",
-};
-type ReportFilterInput = {
-  dateFrom: string;
-  dateTo: string;
-  status: string;
-  account: string;
-  city: string;
-};
-function reportFilters(group: (typeof reportGroups)[number]["value"], input: ReportFilterInput) {
-  const commonDates = { from: input.dateFrom, to: input.dateTo };
-  const filters =
-    group === "VISITS"
-      ? { ...commonDates, status: input.status, accountId: input.account, city: input.city }
-      : group === "TASKS"
-        ? { ...commonDates, status: input.status, accountId: input.account }
-        : group === "ACCOUNTS"
-          ? { status: input.status, city: input.city }
-          : group === "DOCUMENTS"
-            ? { ...commonDates, accountId: input.account }
-            : commonDates;
-  return Object.fromEntries(Object.entries(filters).filter(([, value]) => value));
-}
-export function ReportsPage({ exportsOnly = false }: { exportsOnly?: boolean }) {
-  const [created, setCreated] = useState(false);
-  const state = useAsync(
-    async () =>
-      unwrap(await api.GET("/reports/exports", { params: { query: { page: 1, pageSize: 20 } } })),
-    [],
-  );
-  return (
-    <LoadBoundary {...state}>
-      {!exportsOnly ? (
-        <>
-          <ReportRequest
-            onCreated={() => {
-              setCreated(true);
-              state.reload();
-            }}
-          />
-          {created ? <p role="status">La exportación fue enviada a la cola.</p> : null}
-        </>
-      ) : null}
-      <Card title="Exportaciones">
-        <p>Los archivos disponibles vencen a los 7 días.</p>
-        {(state.data?.items.length ?? 0) ? (
-          <div className="phase-list">
-            {state.data!.items.map((item) => (
-              <ExportRow item={item} key={item.id} />
-            ))}
-          </div>
-        ) : (
-          <StatePanel kind="empty" title="No hay exportaciones">
-            <p>Selecciona un reporte y confirma la exportación.</p>
-          </StatePanel>
-        )}
-      </Card>
-    </LoadBoundary>
-  );
-}
-function ReportRequest({ onCreated }: { onCreated: () => void }) {
-  const [group, setGroup] = useState<(typeof reportGroups)[number]["value"]>("VISITS");
-  const selectedGroup = reportGroups.find((item) => item.value === group)!;
-  const [template, setTemplate] = useState<string>(selectedGroup.templates[0]);
-  const [format, setFormat] = useState<"PDF" | "XLSX">("PDF");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [status, setStatus] = useState("");
-  const [account, setAccount] = useState("");
-  const [city, setCity] = useState("");
-  const [errors, setErrors] = useState<string[]>([]);
-  const intent = useIdempotencyKeyController();
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    const validation: string[] = [];
-    if (dateFrom && dateTo && dateFrom > dateTo)
-      validation.push("La fecha inicial no puede ser posterior a la fecha final.");
-    setErrors(validation);
-    if (validation.length) {
-      requestAnimationFrame(() =>
-        document.querySelector<HTMLElement>(".vicam-error-summary")?.focus(),
-      );
-      return;
-    }
-    unwrap(
-      await api.POST("/reports/exports", {
-        params: idempotencyParams(intent.current()),
-        body: {
-          group,
-          format,
-          template,
-          filters: reportFilters(group, { dateFrom, dateTo, status, account, city }),
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Guayaquil",
-        },
-      }),
-    );
-    intent.rotate();
-    onCreated();
-  }
-  function chooseGroup(value: (typeof reportGroups)[number]["value"]) {
-    const next = reportGroups.find((item) => item.value === value)!;
-    setGroup(value);
-    setTemplate(next.templates[0]);
-    setStatus("");
-  }
-  return (
-    <>
-      <section aria-labelledby="report-groups-title">
-        <h2 className="visually-hidden" id="report-groups-title">
-          Grupos de reportes
-        </h2>
-        <div className="report-group-grid">
-          {reportGroups.map((item) => (
-            <button
-              aria-pressed={group === item.value}
-              className="report-group-card"
-              key={item.value}
-              onClick={() => chooseGroup(item.value)}
-              type="button"
-            >
-              {item.value === "DOCUMENTS" ? (
-                <FileText aria-hidden="true" />
-              ) : (
-                <FileSpreadsheet aria-hidden="true" />
-              )}
-              <strong>{item.label}</strong>
-              <span>{item.description}</span>
-            </button>
-          ))}
-        </div>
-      </section>
-      <form className="phase-form" onSubmit={(event) => void submit(event)}>
-        <ErrorSummary errors={errors} />
-        <FormSection
-          description="Los filtros, alcance y zona se conservan en PDF y Excel."
-          title={`Configurar: ${selectedGroup.label}`}
-        >
-          <Select
-            label="Plantilla"
-            onChange={(event) => setTemplate(event.target.value)}
-            value={template}
-          >
-            {selectedGroup.templates.map((value) => (
-              <option key={value} value={value}>
-                {reportTemplateLabels[value]}
-              </option>
-            ))}
-          </Select>
-          {group !== "ACCOUNTS" ? (
-            <>
-              <Input
-                label="Desde"
-                onChange={(event) => setDateFrom(event.target.value)}
-                type="date"
-                value={dateFrom}
-              />
-              <Input
-                label="Hasta"
-                onChange={(event) => setDateTo(event.target.value)}
-                type="date"
-                value={dateTo}
-              />
-            </>
-          ) : null}
-          {group === "VISITS" || group === "TASKS" || group === "ACCOUNTS" ? (
-            <Select
-              label="Estado"
-              onChange={(event) => setStatus(event.target.value)}
-              value={status}
-            >
-              <option value="">Todos los estados</option>
-              {group === "ACCOUNTS" ? (
-                <>
-                  <option value="ACTIVE">Activo</option>
-                  <option value="ARCHIVED">Archivado</option>
-                </>
-              ) : (
-                <>
-                  <option value="PENDING">Pendiente</option>
-                  {group === "TASKS" ? <option value="IN_PROGRESS">En progreso</option> : null}
-                  <option value="COMPLETED">Completado</option>
-                  <option value="CANCELLED">Cancelado</option>
-                </>
-              )}
-            </Select>
-          ) : null}
-          {group !== "ACCOUNTS" && group !== "MANAGEMENT" ? (
-            <Input
-              label="ID de cliente"
-              onChange={(event) => setAccount(event.target.value)}
-              placeholder="UUID del cliente"
-              value={account}
-            />
-          ) : null}
-          {group === "VISITS" || group === "ACCOUNTS" ? (
-            <Input label="Ciudad" onChange={(event) => setCity(event.target.value)} value={city} />
-          ) : null}
-          <Select
-            label="Formato de exportación"
-            onChange={(event) => setFormat(event.target.value as typeof format)}
-            value={format}
-          >
-            <option value="PDF">PDF</option>
-            <option value="XLSX">Excel</option>
-          </Select>
-        </FormSection>
-        <Card title="Vista previa de solicitud">
-          <dl className="report-preview">
-            <div>
-              <dt>Grupo y plantilla</dt>
-              <dd>
-                {selectedGroup.label} · {reportTemplateLabels[template]}
-              </dd>
-            </div>
-            <div>
-              <dt>Periodo</dt>
-              <dd>
-                {dateFrom || "Sin inicio"} — {dateTo || "Sin fin"}
-              </dd>
-            </div>
-            <div>
-              <dt>Alcance</dt>
-              <dd>
-                {account || city ? [account, city].filter(Boolean).join(" · ") : "Según permisos"}
-              </dd>
-            </div>
-            <div>
-              <dt>Zona</dt>
-              <dd>{Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Guayaquil"}</dd>
-            </div>
-          </dl>
-        </Card>
-        <Button type="submit">Solicitar exportación {format}</Button>
-      </form>
-    </>
-  );
-}
-function ExportRow({ item }: { item: ReportExport }) {
-  const labels = {
-    QUEUED: "En cola",
-    PROCESSING: "Procesando",
-    AVAILABLE: "Disponible",
-    FAILED: "Falló",
-    EXPIRED: "Venció",
-  };
-  return (
-    <article className="export-row">
-      <div>
-        <strong>{reportGroups.find((group) => group.value === item.group)?.label}</strong>
-        <span>
-          {item.format} · {formatDateTime(item.createdAt)}
-        </span>
-        <small>Vence: {formatDateTime(item.expiresAt)}</small>
-      </div>
-      <StatusBadge
-        tone={
-          item.status === "AVAILABLE"
-            ? "success"
-            : item.status === "FAILED"
-              ? "danger"
-              : item.status === "EXPIRED"
-                ? "neutral"
-                : "warning"
-        }
-      >
-        {labels[item.status]}
-      </StatusBadge>
-      {item.status === "FAILED" && item.error ? (
-        <span className="inline-error">Motivo: {item.error}</span>
-      ) : null}
-      {item.status === "AVAILABLE" ? (
-        <a
-          className="vicam-button vicam-button--secondary"
-          href={`/api/v1/reports/exports/${item.id}/download`}
-        >
-          Descargar
-        </a>
-      ) : null}
-    </article>
   );
 }
 
@@ -1011,6 +709,8 @@ export function UsersPage() {
     null,
   );
   const [temporaryPassword, setTemporaryPassword] = useState<string | null>(null);
+  const [passwordTarget, setPasswordTarget] = useState<User | null>(null);
+  const [resetTarget, setResetTarget] = useState<User | null>(null);
   return (
     <>
       <div className="users-toolbar">
@@ -1047,7 +747,10 @@ export function UsersPage() {
                     <UserRow
                       item={item}
                       key={item.id}
+                      onChangePassword={() => setPasswordTarget(item)}
                       onEdit={() => setDialog({ mode: "edit", user: item })}
+                      onResetPassword={() => setResetTarget(item)}
+                      showChangePassword={item.role === "MANAGER"}
                     />
                   ))}
                 </tbody>
@@ -1071,6 +774,17 @@ export function UsersPage() {
                       <Pencil aria-hidden="true" size={18} />
                       Editar usuario
                     </Button>
+                    {item.role === "MANAGER" ? (
+                      <Button onClick={() => setPasswordTarget(item)} variant="secondary">
+                        <KeyRound aria-hidden="true" size={18} />
+                        Cambiar contraseña
+                      </Button>
+                    ) : (
+                      <Button onClick={() => setResetTarget(item)} variant="secondary">
+                        <KeyRound aria-hidden="true" size={18} />
+                        Restablecer contraseña
+                      </Button>
+                    )}
                   </div>
                 </Card>
               ))}
@@ -1094,10 +808,36 @@ export function UsersPage() {
           {...(dialog.mode === "edit" ? { user: dialog.user } : {})}
         />
       ) : null}
+      {passwordTarget ? (
+        <ManagerPasswordDialog onClose={() => setPasswordTarget(null)} user={passwordTarget} />
+      ) : null}
+      {resetTarget ? (
+        <SupervisorPasswordDialog
+          onClose={() => setResetTarget(null)}
+          onReset={(password) => {
+            setResetTarget(null);
+            setTemporaryPassword(password);
+            state.reload();
+          }}
+          user={resetTarget}
+        />
+      ) : null}
     </>
   );
 }
-function UserRow({ item, onEdit }: { item: User; onEdit: () => void }) {
+function UserRow({
+  item,
+  onChangePassword,
+  onEdit,
+  onResetPassword,
+  showChangePassword,
+}: {
+  item: User;
+  onChangePassword: () => void;
+  onEdit: () => void;
+  onResetPassword: () => void;
+  showChangePassword: boolean;
+}) {
   return (
     <tr>
       <td>
@@ -1117,8 +857,145 @@ function UserRow({ item, onEdit }: { item: User; onEdit: () => void }) {
           <Pencil aria-hidden="true" size={18} />
           Editar
         </Button>
+        {showChangePassword ? (
+          <Button onClick={onChangePassword} variant="secondary">
+            <KeyRound aria-hidden="true" size={18} />
+            Cambiar contraseña
+          </Button>
+        ) : (
+          <Button onClick={onResetPassword} variant="secondary">
+            <KeyRound aria-hidden="true" size={18} />
+            Restablecer contraseña
+          </Button>
+        )}
       </td>
     </tr>
+  );
+}
+
+function SupervisorPasswordDialog({
+  onClose,
+  onReset,
+  user,
+}: {
+  onClose: () => void;
+  onReset: (temporaryPassword: string) => void;
+  user: User;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
+  const intent = useIdempotencyKeyController();
+  async function reset() {
+    setBusy(true);
+    setErrors([]);
+    try {
+      const result = unwrap(
+        await api.POST("/users/{id}/reset-password", {
+          params: { path: { id: user.id }, ...idempotencyParams(intent.current()) },
+          body: {},
+        }),
+      );
+      onReset(result.temporaryPassword);
+    } catch (error) {
+      setErrors([
+        error instanceof ApiError ? error.message : "No pudimos restablecer la contraseña.",
+      ]);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <Dialog
+      description={`Se cerrarán las sesiones de ${user.fullName}. La contraseña temporal se mostrará una sola vez y deberá cambiarla al ingresar.`}
+      onClose={onClose}
+      title="Restablecer contraseña"
+    >
+      <ErrorSummary errors={errors} />
+      <p>
+        Usuario: <strong>{user.username}</strong>
+      </p>
+      <div className="modal-actions">
+        <Button onClick={onClose} variant="secondary">
+          Cancelar
+        </Button>
+        <Button loading={busy} onClick={() => void reset()}>
+          Generar contraseña temporal
+        </Button>
+      </div>
+    </Dialog>
+  );
+}
+
+function ManagerPasswordDialog({ onClose, user }: { onClose: () => void; user: User }) {
+  const [busy, setBusy] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const currentPassword = formValue(data, "currentPassword");
+    const newPassword = formValue(data, "newPassword");
+    const confirmation = formValue(data, "confirmation");
+    if (!currentPassword || !newPassword || newPassword !== confirmation) {
+      setErrors(["Completa los campos y confirma correctamente la nueva contraseña."]);
+      return;
+    }
+    setBusy(true);
+    setErrors([]);
+    try {
+      unwrap(
+        await api.POST("/auth/change-password", {
+          body: { currentPassword, newPassword },
+        }),
+      );
+      onClose();
+    } catch (error) {
+      setErrors([error instanceof ApiError ? error.message : "No pudimos cambiar la contraseña."]);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <Dialog
+      description={`Cambia la contraseña de tu cuenta ${user.username}. Las demás sesiones se cerrarán por seguridad.`}
+      onClose={onClose}
+      title="Cambiar contraseña"
+    >
+      <form noValidate onSubmit={(event) => void submit(event)}>
+        <ErrorSummary errors={errors} />
+        <Input
+          autoComplete="current-password"
+          label="Contraseña actual"
+          name="currentPassword"
+          required
+          type="password"
+        />
+        <Input
+          autoComplete="new-password"
+          label="Nueva contraseña"
+          name="newPassword"
+          required
+          type="password"
+        />
+        <Input
+          autoComplete="new-password"
+          label="Confirmar nueva contraseña"
+          name="confirmation"
+          required
+          type="password"
+        />
+        <p className="help-text">
+          Mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo.
+        </p>
+        <div className="modal-actions">
+          <Button onClick={onClose} variant="secondary">
+            Cancelar
+          </Button>
+          <Button loading={busy} type="submit">
+            Cambiar contraseña
+          </Button>
+        </div>
+      </form>
+    </Dialog>
   );
 }
 

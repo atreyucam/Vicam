@@ -103,6 +103,113 @@ describe("Phase 3 worker", () => {
     expect(new Set(queries).size).toBe(4);
   });
 
+  it("applies compatible dashboard filters to detailed exports", async () => {
+    const queries: Array<{ sql: string; values: unknown[] }> = [];
+    const pool = {
+      query: vi.fn((sql: string, values: unknown[] = []) => {
+        if (sql.startsWith("select role from users")) return { rows: [{ role: "MANAGER" }] };
+        queries.push({ sql, values });
+        return { rows: [] };
+      }),
+    };
+    const base = {
+      id: "019b3e83-7a28-7000-8000-000000000501",
+      format: "XLSX" as const,
+      requester_user_id: "019b3e83-7a28-7000-8000-000000000001",
+      requester_role: "MANAGER" as const,
+      scope_user_id: null,
+      timezone: "America/Guayaquil",
+    };
+    const accountId = "019b3e83-7a28-7000-8000-000000000101";
+    const responsibleUserId = "019b3e83-7a28-7000-8000-000000000002";
+
+    await loadReportRecords(pool as never, {
+      ...base,
+      report_group: "TASKS",
+      template: "all",
+      filters: { city: "Quito" },
+    });
+    await loadReportRecords(pool as never, {
+      ...base,
+      report_group: "ACCOUNTS",
+      template: "directory",
+      filters: { accountId, from: "2026-08-01", to: "2026-08-10" },
+    });
+    await loadReportRecords(pool as never, {
+      ...base,
+      report_group: "DOCUMENTS",
+      template: "inventory",
+      filters: { city: "Cuenca", responsibleUserId, status: "AVAILABLE" },
+    });
+    await loadReportRecords(pool as never, {
+      ...base,
+      report_group: "MANAGEMENT",
+      template: "kpis",
+      filters: { accountId, city: "Guayaquil" },
+    });
+    await loadReportRecords(pool as never, {
+      ...base,
+      report_group: "ACCOUNTS",
+      template: "directory",
+      filters: { city: "Loja" },
+    });
+
+    expect(queries[0]!.sql).toContain("a.city=$2");
+    expect(queries[0]!.sql).not.toContain("t.status in ('PENDING','IN_PROGRESS')");
+    expect(queries[1]!.sql).toContain("vp.scheduled_at >= ($2::date::timestamp at time zone $1)");
+    expect(queries[1]!.sql).toContain("a.id=$4");
+    expect(queries[2]!.sql).toContain("a.owner_user_id=$2");
+    expect(queries[2]!.sql).toContain("a.city=$3");
+    expect(queries[2]!.sql).toContain("d.status=$4");
+    expect(queries[3]!.sql).toContain("join commercial_accounts a on a.id=v.account_id");
+    expect(queries[3]!.sql).toContain("join commercial_accounts a on a.id=t.account_id");
+    expect(queries[3]!.sql).toContain("a.owner_user_id=u.id");
+    expect(queries[3]!.values).toEqual([
+      "America/Guayaquil",
+      accountId,
+      accountId,
+      accountId,
+      "Guayaquil",
+      "Guayaquil",
+      "Guayaquil",
+    ]);
+    expect(queries[4]!.values).toEqual(["Loja"]);
+    expect(queries[4]!.sql).toContain("a.city=$1");
+  });
+
+  it("keeps Supervisor ownership scope when common filters are present", async () => {
+    const queries: Array<{ sql: string; values: unknown[] }> = [];
+    const supervisorId = "019b3e83-7a28-7000-8000-000000000002";
+    const pool = {
+      query: vi.fn((sql: string, values: unknown[] = []) => {
+        if (sql.startsWith("select role from users")) return { rows: [{ role: "SUPERVISOR" }] };
+        queries.push({ sql, values });
+        return { rows: [] };
+      }),
+    };
+
+    await loadReportRecords(pool as never, {
+      id: "019b3e83-7a28-7000-8000-000000000501",
+      report_group: "DOCUMENTS",
+      template: "inventory",
+      format: "PDF",
+      requester_user_id: supervisorId,
+      requester_role: "SUPERVISOR",
+      scope_user_id: supervisorId,
+      timezone: "America/Guayaquil",
+      filters: { city: "Guayaquil", responsibleUserId: supervisorId },
+    });
+
+    expect(queries[0]!.sql).toContain("a.owner_user_id=$2");
+    expect(queries[0]!.sql).toContain("a.owner_user_id=$3");
+    expect(queries[0]!.values).toEqual([
+      "America/Guayaquil",
+      supervisorId,
+      supervisorId,
+      "Guayaquil",
+    ]);
+  });
+
   it("interprets ClamAV clean and infected responses without logging content", async () => {
     const scan = async (response: string) => {
       const server = createServer((socket) => {

@@ -1,0 +1,55 @@
+{
+	admin off
+	servers {
+		trusted_proxies static 172.29.0.0/24
+	}
+	log {
+		output stdout
+		format json
+	}
+}
+
+:8080 {
+	encode zstd gzip
+
+	log {
+		output stdout
+		format filter {
+			wrap json
+			fields {
+				request>headers>Cookie delete
+				request>headers>X-Csrf-Token delete
+				request>headers>Authorization delete
+			}
+		}
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		Content-Security-Policy "default-src 'self'; base-uri 'self'; connect-src 'self' {$VICAM_CSP_MAP_CONNECT_SRC}; font-src 'self'; frame-ancestors 'none'; img-src 'self' data: blob: {$VICAM_CSP_MAP_IMG_SRC}; manifest-src 'self'; object-src 'none'; script-src 'self'; style-src 'self'; worker-src 'self' blob:"
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		Permissions-Policy "camera=(), microphone=(), geolocation=(self)"
+		-Server
+	}
+
+	handle /health/live {
+		header Content-Type application/json
+		respond `{"status":"ok","service":"gateway"}` 200
+	}
+
+	@api path /api/v1 /api/v1/*
+	handle @api {
+		reverse_proxy api:3000
+	}
+
+	handle /runtime/config.js {
+		header Cache-Control "no-store"
+		reverse_proxy web:4173
+	}
+
+	handle {
+		reverse_proxy web:4173
+	}
+}
+

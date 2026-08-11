@@ -24,6 +24,7 @@ const schemas = {
       ...dateRange,
       responsibleUserId: uuid.optional(),
       accountId: uuid.optional(),
+      city: z.string().trim().min(1).max(150).optional(),
       status: z.enum(["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"]).optional(),
       priority: priority.optional(),
       overdue: z.boolean().optional(),
@@ -32,6 +33,8 @@ const schemas = {
     .strict(),
   ACCOUNTS: z
     .object({
+      ...dateRange,
+      accountId: uuid.optional(),
       status: z.enum(["ACTIVE", "ARCHIVED"]).optional(),
       accountType: z.string().trim().min(1).max(50).optional(),
       countryCode: z
@@ -50,21 +53,26 @@ const schemas = {
     .object({
       ...dateRange,
       accountId: uuid.optional(),
+      responsibleUserId: uuid.optional(),
+      city: z.string().trim().min(1).max(150).optional(),
       categoryId: uuid.optional(),
       authorUserId: uuid.optional(),
       format: z.enum(["PDF", "DOCX", "XLSX"]).optional(),
+      status: z.enum(["QUARANTINED", "SCANNING", "AVAILABLE", "REJECTED", "DELETED"]).optional(),
     })
     .strict(),
   MANAGEMENT: z
     .object({
       ...dateRange,
       responsibleUserId: uuid.optional(),
+      accountId: uuid.optional(),
+      city: z.string().trim().min(1).max(150).optional(),
     })
     .strict(),
 } as const;
 const templates = {
   VISITS: ["agenda", "completed", "cancelled-rescheduled", "productivity"],
-  TASKS: ["open", "overdue", "completed", "workload"],
+  TASKS: ["all", "open", "overdue", "completed", "workload"],
   ACCOUNTS: ["directory", "stale", "by-fruit-location-owner"],
   DOCUMENTS: ["inventory", "by-category", "review-due"],
   MANAGEMENT: ["kpis", "period-activity"],

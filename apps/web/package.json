@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "5.101.4",
-    "@vicam/contracts": "workspace:0.1.0",
+    "@vicam/contracts": "workspace:*",
     "@vicam/ui": "workspace:*",
     "dexie": "4.4.4",
     "lucide-react": "1.25.0",

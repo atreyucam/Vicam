@@ -66,6 +66,108 @@ async function mockPhase3(page: Page) {
           error: null,
         },
       });
+    if (path.startsWith("/reports/analytics/") && method === "GET") {
+      const view = path.split("/").at(-1)!;
+      return route.fulfill({
+        json: {
+          view,
+          kpis: [
+            { key: "total", label: "Total", value: 12, format: "NUMBER" },
+            { key: "compliance", label: "Cumplimiento", value: 75, format: "PERCENT" },
+          ],
+          trend: [
+            { key: "2026-07-01", label: "1 jul", value: 4 },
+            { key: "2026-07-02", label: "2 jul", value: 8 },
+          ],
+          distribution: [
+            { key: "PENDING", label: "Pendientes", value: 3 },
+            { key: "COMPLETED", label: "Completadas", value: 9 },
+          ],
+          secondaryDistribution: [],
+          responsibleActivity: [],
+          attention: [],
+          rows: [
+            {
+              id: crypto.randomUUID(),
+              kind:
+                view === "tasks"
+                  ? "TASK"
+                  : view === "accounts"
+                    ? "ACCOUNT"
+                    : view === "documents"
+                      ? "DOCUMENT"
+                      : "VISIT",
+              title: view === "tasks" ? "Enviar propuesta" : "Visita de seguimiento",
+              date: "2026-07-24",
+              accountName: "Cliente Andino",
+              responsibleName: "María Manager",
+              status: view === "tasks" ? "PENDING" : "COMPLETED",
+              priority: "HIGH",
+              city: "Guayaquil",
+              category: null,
+              format: null,
+              total: null,
+              secondary: null,
+              href: "/app/tasks",
+            },
+          ],
+          pagination,
+        },
+      });
+    }
+    if (path === "/commercial-accounts" && method === "GET")
+      return route.fulfill({
+        json: {
+          items: [
+            {
+              id: accountId,
+              displayName: "Cliente Andino",
+              legalName: null,
+              accountType: "COMPANY",
+              ownerUserId: managerId,
+              countryCode: "EC",
+              stateProvince: null,
+              city: "Guayaquil",
+              address: null,
+              postalCode: null,
+              phone: "+593400000000",
+              email: null,
+              timezone: "America/Guayaquil",
+              latitude: null,
+              longitude: null,
+              locationSource: null,
+              locationCapturedAt: null,
+              fruitIds: [],
+              status: "ACTIVE",
+              version: 1,
+              ownerFullName: "María Manager",
+              primaryContactName: null,
+              fruits: [],
+              createdAt: now,
+              updatedAt: now,
+            },
+          ],
+          pagination,
+        },
+      });
+    if (path === "/users" && method === "GET")
+      return route.fulfill({
+        json: {
+          items: [
+            {
+              id: managerId,
+              username: "manager",
+              fullName: "María Manager",
+              role: "MANAGER",
+              status: "ACTIVE",
+              mustChangePassword: false,
+              lastLoginAt: now,
+              createdAt: now,
+            },
+          ],
+          pagination,
+        },
+      });
     if (path === "/documents" && method === "GET")
       return route.fulfill({
         json: {
@@ -192,27 +294,27 @@ test("reportes cubren cinco grupos, filtros, cola y responsive", async ({ page }
   const requests = await mockPhase3(page);
   await page.goto("/app/reports");
   await expect(page.getByRole("heading", { level: 1, name: "Reportes" })).toBeVisible();
-  for (const name of ["Visitas", "Tareas", "Clientes", "Documentos", "Resumen gerencial"])
-    await expect(page.getByRole("button", { name: new RegExp(name) })).toBeVisible();
-  await page.getByRole("button", { name: /Tareas/ }).click();
-  await expect(page.getByRole("button", { name: /Tareas/ })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
-  await page.getByLabel("Plantilla").selectOption("overdue");
-  await expect(page.getByLabel("Plantilla")).toHaveValue("overdue");
-  await page.getByLabel("Desde").fill("2026-07-01");
-  await page.getByLabel("ID de cliente").fill("019b3e83-7a28-7000-8000-000000000101");
-  await page.getByLabel("Formato de exportación").selectOption("XLSX");
-  await expect(page.getByRole("button", { name: "Solicitar exportación XLSX" })).toBeVisible();
-  await page.getByRole("button", { name: "Solicitar exportación XLSX" }).click();
-  await expect(page.getByText(/enviada a la cola/i)).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Resumen", selected: true })).toBeVisible();
+  for (const name of ["Resumen", "Visitas", "Tareas", "Clientes", "Documentos"])
+    await expect(page.getByRole("tab", { name })).toBeVisible();
+  await expect(page.getByText("Actividad en el tiempo")).toBeVisible();
+  await page.getByRole("tab", { name: "Tareas" }).click();
+  await expect(page.getByRole("tab", { name: "Tareas", selected: true })).toBeVisible();
+  await page.getByLabel("Buscar cliente").fill("Andino");
+  await page.getByLabel("Cliente", { exact: true }).selectOption(accountId);
+  await page.getByLabel("Estado de tarea").selectOption("PENDING");
+  await page.getByRole("button", { name: "Exportar", exact: true }).click();
+  await page.getByLabel("Formato").selectOption("XLSX");
+  await page.getByRole("button", { name: "Exportar Excel" }).click();
+  await expect(page.getByText("Historial de exportaciones")).toBeVisible();
   expect(
     requests.some(
       (request) =>
         request.path === "/reports/exports" &&
         request.method === "POST" &&
-        JSON.stringify(request.body).includes('"template":"overdue"'),
+        JSON.stringify(request.body).includes('"group":"TASKS"') &&
+        JSON.stringify(request.body).includes(`"accountId":"${accountId}"`) &&
+        JSON.stringify(request.body).includes('"status":"PENDING"'),
     ),
   ).toBe(true);
   await expectAccessible(page);

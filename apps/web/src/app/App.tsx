@@ -94,7 +94,7 @@ const ProfilePage = lazy(() =>
   import("../routes/Phase3Pages").then((module) => ({ default: module.ProfilePage })),
 );
 const ReportsPage = lazy(() =>
-  import("../routes/Phase3Pages").then((module) => ({ default: module.ReportsPage })),
+  import("../routes/ReportsPage").then((module) => ({ default: module.ReportsPage })),
 );
 const SettingsPage = lazy(() =>
   import("../routes/Phase3Pages").then((module) => ({ default: module.SettingsPage })),
@@ -146,11 +146,7 @@ const titles: Record<string, [string, string, string]> = {
     "Metadatos y estados de seguridad; los archivos nunca se guardan offline.",
   ],
   "/app/notifications": ["Notificaciones", "Operación", "Recordatorios y avisos de trabajo."],
-  "/app/reports": [
-    "Reportes",
-    "Operación",
-    "Solicita exportaciones por grupo, alcance y zona horaria.",
-  ],
+  "/app/reports": ["Reportes", "Operación", "Analiza la actividad comercial y operativa."],
   "/app/reports/exports": [
     "Exportaciones",
     "Reportes",

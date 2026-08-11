@@ -25,6 +25,7 @@ Este procedimiento no ejecuta despliegues desde CI ni conecta a un VPS. Úselo s
 ```sh
 docker compose --env-file /srv/vicam/staging.env -f compose.staging.yaml config --quiet
 docker compose --env-file /srv/vicam/production.env -f compose.production.yaml config --quiet
+docker compose --env-file /srv/vicam/production.env -f compose.production.yaml -f compose.vps.yaml config --quiet
 docker compose --env-file /srv/vicam/staging.env -f compose.staging.yaml config | grep -E 'documents_data|DOCUMENT_STORAGE_ROOT|CLAMD_HOST'
 ```
 
@@ -32,13 +33,23 @@ docker compose --env-file /srv/vicam/staging.env -f compose.staging.yaml config 
 
 Actualice solo `VICAM_*_IMAGE` con digests de CI y ejecute:
 
+En el VPS compartido, NGINX conserva 80/443 y VICAM escucha solo en
+`127.0.0.1:18081`. Cree primero el registro A
+`staging.app.vicamproduce.com -> 72.60.127.227`, instale el bloque NGINX desde
+`infra/nginx/vicam.conf.example` y emita el certificado con Certbot.
+
 ```sh
-docker compose --env-file /srv/vicam/staging.env -f compose.staging.yaml pull
-docker compose --env-file /srv/vicam/staging.env -f compose.staging.yaml run --rm api node packages/db/dist/migrate-cli.js
-docker compose --env-file /srv/vicam/staging.env -f compose.staging.yaml up -d --wait
+export VICAM_COMPOSE="docker compose --env-file /srv/vicam/staging.env -f compose.staging.yaml -f compose.vps.yaml"
+$VICAM_COMPOSE pull
+$VICAM_COMPOSE run --rm api node packages/db/dist/migrate-cli.js
+$VICAM_COMPOSE run --rm api node apps/api/dist/cli/bootstrap-manager.js --username vladimir --full-name Vladimir
+$VICAM_COMPOSE up -d --wait
 curl --fail --show-error https://staging.app.vicamproduce.com/health/live
 curl --fail --show-error https://staging.app.vicamproduce.com/api/v1/health/ready
 ```
+
+El bootstrap imprime una contraseña temporal una sola vez. No la redirija a
+archivos ni logs. Falla si ya existe cualquier usuario.
 
 Ejecute E2E completo, offline, importación, reporte, prueba de ClamAV y restore programado. Registre resultado y referencia anterior antes de autorizar producción.
 Compruebe además que API y worker montan el mismo `documents_data`, que Caddy
@@ -46,6 +57,11 @@ no lo monta y que el mapa no genera violaciones CSP en la consola.
 
 ## Aplicar a producción
 
-Repita con `production.env` y `compose.production.yaml` tras aprobación manual. Después, haga smoke de login, cuenta, agenda, documento controlado, reporte y monitor externo. No exponga PostgreSQL, worker, ClamAV ni backup al host.
+Repita con `production.env`, `compose.production.yaml` y `compose.vps.yaml` tras
+aprobación manual. Producción escucha solo en `127.0.0.1:18082`; NGINX publica
+`app.vicamproduce.com`. Ejecute el bootstrap únicamente si la base productiva
+está vacía. Después, haga smoke de login, cuenta, agenda, documento controlado,
+reporte y monitor externo. No exponga PostgreSQL, worker, ClamAV ni backup al
+host.
 
 Si falla una migración, deténgase: no haga downgrade automático de esquema. Use rollback para código compatible o restore ante daño de datos.

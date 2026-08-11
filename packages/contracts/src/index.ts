@@ -8,6 +8,7 @@ export * from "./health.js";
 export * from "./openapi-document.js";
 export * from "./pagination.js";
 export * from "./phase3.js";
+export * from "./reports.js";
 export * from "./sync.js";
 export * from "./tasks.js";
 export * from "./users.js";

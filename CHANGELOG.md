@@ -25,6 +25,9 @@ un release aprobado.
   resultado comercial separado del estado y detalle propio de tareas.
 - Resumen comercial por cliente con próxima visita, tareas abiertas y actividad
   reciente, sin consultas N+1.
+- Dashboard analítico de Reportes con resumen gerencial, vistas de visitas,
+  tareas, clientes y documentos, filtros operativos, tablas responsive y
+  exportación secundaria PDF/XLSX con el alcance vigente.
 
 ### Security
 

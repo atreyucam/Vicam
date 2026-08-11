@@ -14,6 +14,8 @@ import { createPhase3Router } from "./phase3/routes.js";
 import { createOperationsRouter } from "./phase3/operations-routes.js";
 import { createDocumentsRouter } from "./documents/routes.js";
 import { createSyncIdentityRouter, createSyncRouter } from "./sync/routes.js";
+import { authenticate, requirePasswordChangeComplete } from "./auth/authenticate.js";
+import { createReportsAnalyticsRouter } from "./reports/index.js";
 
 import { createErrorHandler, notFoundHandler } from "./errors.js";
 import { requestIdMiddleware } from "./middleware/request-id.js";
@@ -57,6 +59,12 @@ export function createApp({ databaseProbe, logger, pool, config }: AppDependenci
     app.use("/api/v1", createSyncIdentityRouter(pool, config));
     app.use("/api/v1/sync", createSyncRouter(pool, config));
     app.use("/api/v1", createPhase3Router(pool, config));
+    app.use(
+      "/api/v1",
+      authenticate(pool, config.AUTH_SECRET),
+      requirePasswordChangeComplete,
+      createReportsAnalyticsRouter(pool),
+    );
     app.use("/api/v1", createOperationsRouter(pool, config));
     app.use("/api/v1", createDocumentsRouter(pool, config));
   }

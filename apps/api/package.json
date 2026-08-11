@@ -12,6 +12,7 @@
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
     "auth:reset-manager": "tsx src/cli/reset-manager-password.ts",
+    "auth:bootstrap-manager": "tsx src/cli/bootstrap-manager.ts",
     "pretest": "pnpm --filter @vicam/contracts build && pnpm --filter @vicam/db build",
     "test": "vitest run src",
     "pretypecheck": "pnpm --filter @vicam/contracts build && pnpm --filter @vicam/db build",

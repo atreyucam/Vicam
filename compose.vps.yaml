@@ -1,0 +1,10 @@
+# Adaptación para un VPS que ya usa NGINX en 80/443. Se aplica después del
+# compose de staging/producción y solo publica el gateway en loopback.
+services:
+  caddy:
+    ports: !reset
+      - "127.0.0.1:${VICAM_LOOPBACK_PORT:?set a unique loopback port}:8080"
+    volumes: !override
+      - ./infra/caddy/Caddyfile.vps:/etc/caddy/Caddyfile:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --output-document=- http://127.0.0.1:8080/health/live"]

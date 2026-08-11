@@ -52,6 +52,11 @@ import { errorEnvelopeSchema } from "./common.js";
 import { liveHealthSchema, readyHealthSchema } from "./health.js";
 import { paginationQuerySchema } from "./pagination.js";
 import {
+  reportAnalyticsQuerySchema,
+  reportAnalyticsResponseSchema,
+  reportAnalyticsViewSchema,
+} from "./reports.js";
+import {
   createOfflineGrantRequestSchema,
   deviceSchema,
   offlineGrantSchema,
@@ -148,6 +153,10 @@ const errors = {
   },
   422: {
     description: "Business validation failed.",
+    content: { "application/json": { schema: errorEnvelopeSchema } },
+  },
+  500: {
+    description: "Unexpected server error.",
     content: { "application/json": { schema: errorEnvelopeSchema } },
   },
   503: {
@@ -1003,6 +1012,27 @@ registry.registerPath({
       content: { "application/json": { schema: z.object({ id: z.uuid() }) } },
     },
     422: errors[422],
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/reports/analytics/{view}",
+  tags: ["Reports"],
+  security: bearerSecurity,
+  request: {
+    params: z.object({ view: reportAnalyticsViewSchema }),
+    query: reportAnalyticsQuerySchema,
+  },
+  responses: {
+    200: {
+      description: "Filtered operational analytics for the selected report view.",
+      content: { "application/json": { schema: reportAnalyticsResponseSchema } },
+    },
+    401: errors[401],
+    403: errors[403],
+    422: errors[422],
+    500: errors[500],
   },
 });
 

@@ -184,6 +184,20 @@ export class UsersService {
           const beforeRow = found.rows[0];
           if (beforeRow === undefined)
             throw new AppError(404, "USER_NOT_FOUND", "El usuario no está disponible.");
+          const firstUser = await client.query<{ id: string }>(
+            "select id from users order by created_at asc,id asc limit 1",
+          );
+          const isProtectedInitialManager = firstUser.rows[0]?.id === id;
+          if (
+            isProtectedInitialManager &&
+            (input.status === "INACTIVE" || input.role === "SUPERVISOR")
+          ) {
+            throw new AppError(
+              422,
+              "INITIAL_MANAGER_PROTECTED",
+              "El Manager inicial no puede desactivarse ni perder el rol Manager.",
+            );
+          }
           if (input.status === "INACTIVE") {
             const assigned = await client.query<{ total: number }>(
               `select (

@@ -76,6 +76,7 @@ test("Fase 1 atraviesa Caddy, API y Postgres con permisos reales", async ({
   );
   const accountId = new URL(page.url()).pathname.split("/").at(-1)!;
 
+  await page.getByRole("link", { name: "Contactos", exact: true }).click();
   await page.getByRole("button", { name: "Agregar contacto" }).click();
   await page.getByLabel("Nombre completo").fill(contactName);
   await page.getByLabel("Correo", { exact: true }).fill(`contacto-${Date.now()}@example.test`);
@@ -101,6 +102,7 @@ test("Fase 1 atraviesa Caddy, API y Postgres con permisos reales", async ({
   await rescheduleDialog.getByRole("button", { name: "Confirmar reprogramación" }).click();
   await expect(rescheduleDialog).toBeHidden();
   await page.getByRole("link", { name: "Completar" }).click();
+  await page.getByLabel("Resultado de la visita").selectOption("INTERESTED");
   await page.getByLabel("Observación").fill(`Cierre real ${suffix}`);
   await page.getByRole("button", { name: "Guardar visita" }).click();
   await expect(page.getByText("Completada", { exact: true }).first()).toBeVisible();
@@ -125,16 +127,16 @@ test("Fase 1 atraviesa Caddy, API y Postgres con permisos reales", async ({
 
   const dueDate = new Date(Date.now() + 2 * 24 * 60 * 60_000).toISOString().slice(0, 10);
   await createTask(page, accountName, completedTask, dueDate);
-  let taskCard = page.locator(".task-card").filter({ hasText: completedTask });
-  await taskCard.getByRole("button", { name: "Completar" }).click();
-  await expect(taskCard.getByText("Completada", { exact: true })).toBeVisible();
+  await page.getByRole("link", { name: completedTask }).click();
+  await page.getByRole("button", { name: "Completar" }).click();
+  await expect(page.getByText("Completada", { exact: true }).first()).toBeVisible();
 
   await createTask(page, accountName, cancelledTask, dueDate);
-  taskCard = page.locator(".task-card").filter({ hasText: cancelledTask });
-  await taskCard.getByRole("button", { name: "Cancelar tarea" }).click();
+  await page.getByRole("link", { name: cancelledTask }).click();
+  await page.getByRole("button", { name: "Cancelar tarea" }).click();
   await page.getByLabel("Motivo de cancelación").fill(`Cancelación E2E ${suffix}`);
   await page.getByRole("button", { name: "Confirmar cancelación" }).click();
-  await expect(taskCard.getByText("Cancelada", { exact: true })).toBeVisible();
+  await expect(page.getByText("Cancelada", { exact: true }).first()).toBeVisible();
 
   await navigate(page, "/app/audit");
   await expect(page.getByRole("table")).toBeVisible();

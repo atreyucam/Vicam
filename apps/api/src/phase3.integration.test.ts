@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from "@testcontainers/postgresql";
@@ -8,6 +8,7 @@ import {
   documentsPageSchema,
   fruitSchema,
   importBatchSchema,
+  reportAnalyticsResponseSchema,
   reportExportSchema,
   sessionTokenResponseSchema,
 } from "@vicam/contracts";
@@ -157,6 +158,112 @@ integration("Phase 3 operational API", () => {
         timezone: "America/Guayaquil",
       });
     expect(response.status).toBe(403);
+  });
+
+  it("calculates analytics in backend and keeps Supervisor ownership scope", async () => {
+    const manager = await login("manager.demo", "VicamDev!Manager2026");
+    const managerResponse = await request(app)
+      .get("/api/v1/reports/analytics/visits")
+      .query({ timezone: "America/Guayaquil", page: 1, pageSize: 20 })
+      .set("authorization", `Bearer ${manager}`);
+    expect(managerResponse.status, JSON.stringify(managerResponse.body)).toBe(200);
+    const managerAnalytics = reportAnalyticsResponseSchema.parse(managerResponse.body);
+    expect(managerAnalytics.kpis).toEqual(
+      expect.arrayContaining([expect.objectContaining({ key: "total", value: 2 })]),
+    );
+    expect(managerAnalytics.pagination.total).toBe(2);
+
+    const supervisor = await login("supervisor.ana", "VicamDev!SupervisorA2026");
+    expect(
+      (
+        await request(app)
+          .get("/api/v1/reports/analytics/visits")
+          .query({ timezone: "America/Guayaquil" })
+          .set("authorization", `Bearer ${supervisor}`)
+      ).status,
+    ).toBe(403);
+    await pool.query(
+      `update app_settings
+       set value=jsonb_set(value,'{supervisorReportsEnabled}','true'::jsonb),version=version+1
+       where settings_key='application'`,
+    );
+    const scopedResponse = await request(app)
+      .get("/api/v1/reports/analytics/visits")
+      .query({ timezone: "America/Guayaquil", page: 1, pageSize: 20 })
+      .set("authorization", `Bearer ${supervisor}`);
+    expect(scopedResponse.status, JSON.stringify(scopedResponse.body)).toBe(200);
+    const scoped = reportAnalyticsResponseSchema.parse(scopedResponse.body);
+    expect(scoped.kpis).toEqual(
+      expect.arrayContaining([expect.objectContaining({ key: "total", value: 1 })]),
+    );
+    expect(scoped.rows).toEqual([
+      expect.objectContaining({ accountName: "Exportadora Costa Demo" }),
+    ]);
+    await pool.query(
+      `update app_settings
+       set value=jsonb_set(value,'{supervisorReportsEnabled}','false'::jsonb),version=version+1
+       where settings_key='application'`,
+    );
+  });
+
+  it("invalidates a Supervisor export after an included account is reassigned", async () => {
+    await pool.query(
+      `update app_settings
+       set value=jsonb_set(value,'{supervisorReportsEnabled}','true'::jsonb),version=version+1
+       where settings_key='application'`,
+    );
+    const supervisor = await login("supervisor.ana", "VicamDev!SupervisorA2026");
+    const created = await request(app)
+      .post("/api/v1/reports/exports")
+      .set("authorization", `Bearer ${supervisor}`)
+      .send({
+        group: "VISITS",
+        template: "agenda",
+        format: "PDF",
+        filters: { accountId: "10000000-0000-4000-8000-000000000001" },
+        timezone: "America/Guayaquil",
+      });
+    expect(created.status, JSON.stringify(created.body)).toBe(202);
+    const report = reportExportSchema.parse(created.body);
+    const storageKey = `reports/${report.id}.pdf`;
+    await mkdir(join(storageRoot, "operations", "reports"), { recursive: true });
+    await writeFile(join(storageRoot, "operations", storageKey), "%PDF-1.7\nreporte autorizado");
+    await pool.query("update report_exports set status='AVAILABLE',storage_key=$2 where id=$1", [
+      report.id,
+      storageKey,
+    ]);
+    expect(
+      (
+        await request(app)
+          .get(`/api/v1/reports/exports/${report.id}/download`)
+          .set("authorization", `Bearer ${supervisor}`)
+      ).status,
+    ).toBe(200);
+
+    await pool.query(
+      `insert into audit_logs(id,actor_user_id,action,entity_type,entity_id,before_changes,after_changes,request_id)
+       values($1,$2,'ACCOUNT_UPDATED','commercial_account',$3,$4,$5,$6)`,
+      [
+        crypto.randomUUID(),
+        "00000000-0000-4000-8000-000000000001",
+        "10000000-0000-4000-8000-000000000001",
+        { ownerUserId: "00000000-0000-4000-8000-000000000002" },
+        { ownerUserId: "00000000-0000-4000-8000-000000000003", changedFields: ["ownerUserId"] },
+        `phase3-reassignment-${crypto.randomUUID()}`,
+      ],
+    );
+    expect(
+      (
+        await request(app)
+          .get(`/api/v1/reports/exports/${report.id}/download`)
+          .set("authorization", `Bearer ${supervisor}`)
+      ).status,
+    ).toBe(404);
+    await pool.query(
+      `update app_settings
+       set value=jsonb_set(value,'{supervisorReportsEnabled}','false'::jsonb),version=version+1
+       where settings_key='application'`,
+    );
   });
 
   it("uses the generated confirmation id for replay-safe import confirmation", async () => {

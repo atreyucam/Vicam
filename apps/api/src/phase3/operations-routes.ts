@@ -430,6 +430,21 @@ export function createOperationsRouter(pool: DbPool, config: ApiConfig): Express
           !(await supervisorReportsAllowed(pool)))
       )
         throw new AppError(404, "REPORT_EXPORT_NOT_FOUND", "La exportación no está disponible.");
+      if (row.current_role === "SUPERVISOR") {
+        const invalidated = await pool.query<{ invalidated: boolean }>(
+          `select exists(
+             select 1 from audit_logs al
+             where al.entity_type='commercial_account' and al.action='ACCOUNT_UPDATED'
+               and al.occurred_at>= $2
+               and al.before_changes->>'ownerUserId'=$1
+               and al.after_changes->>'ownerUserId' is distinct from $1
+               and (not ($3::jsonb ? 'accountId') or al.entity_id=($3::jsonb->>'accountId')::uuid)
+           ) invalidated`,
+          [a.userId, row.created_at, row.filters],
+        );
+        if (invalidated.rows[0]?.invalidated === true)
+          throw new AppError(404, "REPORT_EXPORT_NOT_FOUND", "La exportación no está disponible.");
+      }
       const file = await readFile(join(storageRoot(config), row.storage_key));
       s.setHeader(
         "Content-Type",

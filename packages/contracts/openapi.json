@@ -2152,6 +2152,258 @@
         },
         "required": ["deviceId", "endpoint", "p256dh", "auth"]
       },
+      "ReportAnalyticsResponse": {
+        "type": "object",
+        "properties": {
+          "view": {
+            "type": "string",
+            "enum": ["summary", "visits", "tasks", "accounts", "documents"]
+          },
+          "kpis": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportKpi"
+            }
+          },
+          "trend": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportSeriesPoint"
+            }
+          },
+          "distribution": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportSeriesPoint"
+            }
+          },
+          "secondaryDistribution": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportSeriesPoint"
+            }
+          },
+          "responsibleActivity": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportResponsibleActivity"
+            }
+          },
+          "attention": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportAttentionItem"
+            }
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportTableRow"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "view",
+          "kpis",
+          "trend",
+          "distribution",
+          "secondaryDistribution",
+          "responsibleActivity",
+          "attention",
+          "rows",
+          "pagination"
+        ]
+      },
+      "ReportKpi": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "value": {
+            "type": "number"
+          },
+          "format": {
+            "type": "string",
+            "enum": ["NUMBER", "PERCENT"]
+          }
+        },
+        "required": ["key", "label", "value", "format"]
+      },
+      "ReportSeriesPoint": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "value": {
+            "type": "number"
+          },
+          "secondaryValue": {
+            "type": "number"
+          }
+        },
+        "required": ["key", "label", "value"]
+      },
+      "ReportResponsibleActivity": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "completed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "open": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "overdue": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "compliancePercent": {
+            "type": ["number", "null"],
+            "minimum": 0,
+            "maximum": 100
+          }
+        },
+        "required": ["userId", "name", "total", "completed", "open", "overdue", "compliancePercent"]
+      },
+      "ReportAttentionItem": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["VISIT", "TASK", "ACCOUNT", "DOCUMENT"]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 250
+          },
+          "detail": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "date": {
+            "type": ["string", "null"]
+          },
+          "href": {
+            "type": "string"
+          }
+        },
+        "required": ["kind", "id", "title", "detail", "date", "href"]
+      },
+      "ReportTableRow": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["VISIT", "TASK", "ACCOUNT", "DOCUMENT"]
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 250
+          },
+          "date": {
+            "type": ["string", "null"]
+          },
+          "accountName": {
+            "type": ["string", "null"],
+            "maxLength": 250
+          },
+          "responsibleName": {
+            "type": ["string", "null"],
+            "maxLength": 200
+          },
+          "status": {
+            "type": ["string", "null"],
+            "maxLength": 80
+          },
+          "priority": {
+            "type": ["string", "null"],
+            "maxLength": 80
+          },
+          "city": {
+            "type": ["string", "null"],
+            "maxLength": 150
+          },
+          "category": {
+            "type": ["string", "null"],
+            "maxLength": 150
+          },
+          "format": {
+            "type": ["string", "null"],
+            "maxLength": 20
+          },
+          "total": {
+            "type": ["integer", "null"],
+            "minimum": 0
+          },
+          "secondary": {
+            "type": ["string", "null"],
+            "maxLength": 250
+          },
+          "href": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "date",
+          "accountName",
+          "responsibleName",
+          "status",
+          "priority",
+          "city",
+          "category",
+          "format",
+          "total",
+          "secondary",
+          "href"
+        ]
+      },
       "ReportExportsPage": {
         "type": "object",
         "properties": {
@@ -2828,6 +3080,16 @@
               }
             }
           },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Service unavailable or feature disabled by an operational rollback flag.",
             "content": {
@@ -2940,6 +3202,16 @@
               }
             }
           },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Service unavailable or feature disabled by an operational rollback flag.",
             "content": {
@@ -3042,6 +3314,16 @@
           },
           "422": {
             "description": "Business validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3269,6 +3551,16 @@
               }
             }
           },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Service unavailable or feature disabled by an operational rollback flag.",
             "content": {
@@ -3462,6 +3754,16 @@
               }
             }
           },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Service unavailable or feature disabled by an operational rollback flag.",
             "content": {
@@ -3574,6 +3876,16 @@
               }
             }
           },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Service unavailable or feature disabled by an operational rollback flag.",
             "content": {
@@ -3678,6 +3990,16 @@
           },
           "422": {
             "description": "Business validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3878,6 +4200,16 @@
               }
             }
           },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Service unavailable or feature disabled by an operational rollback flag.",
             "content": {
@@ -3963,6 +4295,16 @@
           },
           "422": {
             "description": "Business validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4081,6 +4423,16 @@
               }
             }
           },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Service unavailable or feature disabled by an operational rollback flag.",
             "content": {
@@ -4169,6 +4521,16 @@
           },
           "422": {
             "description": "Business validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4279,6 +4641,16 @@
           },
           "422": {
             "description": "Business validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4408,6 +4780,16 @@
               }
             }
           },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Service unavailable or feature disabled by an operational rollback flag.",
             "content": {
@@ -4493,6 +4875,16 @@
           },
           "422": {
             "description": "Business validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4702,6 +5094,16 @@
               }
             }
           },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Service unavailable or feature disabled by an operational rollback flag.",
             "content": {
@@ -4787,6 +5189,16 @@
           },
           "422": {
             "description": "Business validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4897,6 +5309,16 @@
           },
           "422": {
             "description": "Business validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5017,6 +5439,16 @@
               }
             }
           },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Service unavailable or feature disabled by an operational rollback flag.",
             "content": {
@@ -5129,6 +5561,16 @@
               }
             }
           },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Service unavailable or feature disabled by an operational rollback flag.",
             "content": {
@@ -5233,6 +5675,16 @@
           },
           "422": {
             "description": "Business validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5451,6 +5903,16 @@
               }
             }
           },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Service unavailable or feature disabled by an operational rollback flag.",
             "content": {
@@ -5536,6 +5998,16 @@
           },
           "422": {
             "description": "Business validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5646,6 +6118,16 @@
           },
           "422": {
             "description": "Business validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5766,6 +6248,16 @@
               }
             }
           },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Service unavailable or feature disabled by an operational rollback flag.",
             "content": {
@@ -5870,6 +6362,16 @@
           },
           "422": {
             "description": "Business validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6122,6 +6624,16 @@
               }
             }
           },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Service unavailable or feature disabled by an operational rollback flag.",
             "content": {
@@ -6200,6 +6712,16 @@
           },
           "422": {
             "description": "Business validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6321,6 +6843,16 @@
           },
           "422": {
             "description": "Business validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6560,6 +7092,16 @@
               }
             }
           },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Service unavailable or feature disabled by an operational rollback flag.",
             "content": {
@@ -6760,6 +7302,16 @@
               }
             }
           },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Service unavailable or feature disabled by an operational rollback flag.",
             "content": {
@@ -6884,6 +7436,16 @@
           },
           "422": {
             "description": "Business validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7037,6 +7599,16 @@
           },
           "422": {
             "description": "Business validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7218,6 +7790,16 @@
           },
           "422": {
             "description": "Business validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
             "content": {
               "application/json": {
                 "schema": {
@@ -8035,6 +8617,218 @@
         }
       }
     },
+    "/reports/analytics/{view}": {
+      "get": {
+        "tags": ["Reports"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["summary", "visits", "tasks", "accounts", "documents"]
+            },
+            "required": true,
+            "name": "view",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "required": false,
+            "name": "pageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "required": false,
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "required": false,
+            "name": "to",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["America/Guayaquil"],
+              "default": "America/Guayaquil"
+            },
+            "required": false,
+            "name": "timezone",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "responsibleUserId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "accountId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 150
+            },
+            "required": false,
+            "name": "city",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["PENDING", "COMPLETED", "CANCELLED"]
+            },
+            "required": false,
+            "name": "visitStatus",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"]
+            },
+            "required": false,
+            "name": "taskStatus",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["LOW", "MEDIUM", "HIGH"]
+            },
+            "required": false,
+            "name": "priority",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "overdue",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["ACTIVE", "ARCHIVED"]
+            },
+            "required": false,
+            "name": "accountStatus",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "categoryId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["QUARANTINED", "SCANNING", "AVAILABLE", "REJECTED", "DELETED"]
+            },
+            "required": false,
+            "name": "documentStatus",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Filtered operational analytics for the selected report view.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportAnalyticsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required or session expired.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient role or ownership.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Business validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/reports/exports": {
       "get": {
         "tags": ["Reports"],
@@ -8373,6 +9167,16 @@
           },
           "422": {
             "description": "Business validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
             "content": {
               "application/json": {
                 "schema": {

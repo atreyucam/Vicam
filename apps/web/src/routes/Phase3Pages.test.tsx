@@ -4,7 +4,7 @@ import axe from "axe-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/api";
 import { MapLibreField } from "../components/MapLibreField";
-import { DocumentsPage, ImportsPage, ProfilePage, ReportsPage, UsersPage } from "./Phase3Pages";
+import { DocumentsPage, ImportsPage, ProfilePage, UsersPage } from "./Phase3Pages";
 
 const ok = <T,>(data: T, status = 200) => ({
   data,
@@ -219,60 +219,4 @@ describe("rutas Phase3", () => {
     expect(restoreKey).not.toBe(archiveKey);
   });
 
-  it("expone cinco grupos y envía filtros equivalentes al exportar", async () => {
-    vi.spyOn(api, "GET").mockResolvedValue(ok(page([])));
-    const post = vi.spyOn(api, "POST").mockResolvedValue(
-      ok(
-        {
-          id: "019b3e83-7a28-7000-8000-000000000501",
-          group: "TASKS",
-          template: "overdue",
-          format: "XLSX",
-          status: "QUEUED",
-          filters: {
-            from: "2026-07-01",
-            accountId: "019b3e83-7a28-7000-8000-000000000101",
-          },
-          createdAt: "2026-07-24T10:00:00.000Z",
-          expiresAt: "2026-07-31T10:00:00.000Z",
-          error: null,
-        },
-        202,
-      ),
-    );
-    const { container } = renderWithClient(<ReportsPage />);
-    expect(await screen.findByRole("button", { name: /Tareas/ })).toBeVisible();
-    expect(screen.getAllByRole("button", { pressed: false })).toHaveLength(4);
-    fireEvent.click(screen.getByRole("button", { name: /Tareas/ }));
-    fireEvent.change(screen.getByLabelText("Plantilla"), { target: { value: "overdue" } });
-    fireEvent.change(screen.getByLabelText("Desde"), { target: { value: "2026-07-01" } });
-    fireEvent.change(screen.getByLabelText("ID de cliente"), {
-      target: { value: "019b3e83-7a28-7000-8000-000000000101" },
-    });
-    fireEvent.change(screen.getByLabelText("Formato de exportación"), {
-      target: { value: "XLSX" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Solicitar exportación XLSX" }));
-    await waitFor(() => expect(post).toHaveBeenCalled());
-    expect(post.mock.calls[0]?.[0]).toBe("/reports/exports");
-    expect(post.mock.calls[0]?.[1]).toMatchObject({
-      body: {
-        group: "TASKS",
-        template: "overdue",
-        format: "XLSX",
-        filters: {
-          from: "2026-07-01",
-          accountId: "019b3e83-7a28-7000-8000-000000000101",
-        },
-      },
-    });
-    const firstKey = requestKey(post.mock.calls, 0);
-    fireEvent.click(screen.getByRole("button", { name: "Solicitar exportación XLSX" }));
-    await waitFor(() => expect(post).toHaveBeenCalledTimes(2));
-    const secondKey = requestKey(post.mock.calls, 1);
-    expect(firstKey).toBeTruthy();
-    expect(secondKey).toBeTruthy();
-    expect(secondKey).not.toBe(firstKey);
-    expect((await axe.run(container)).violations).toEqual([]);
-  });
 });

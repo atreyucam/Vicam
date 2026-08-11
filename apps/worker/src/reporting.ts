@@ -122,6 +122,7 @@ export async function loadReportRecords(pool: DbPool, item: ReportExportJob) {
     addFilter(where, values, (p) => `t.due_date<=${p}::date`, filters.to);
     addFilter(where, values, (p) => `t.responsible_user_id=${p}`, filters.responsibleUserId);
     addFilter(where, values, (p) => `t.account_id=${p}`, filters.accountId);
+    addFilter(where, values, (p) => `a.city=${p}`, filters.city);
     addFilter(where, values, (p) => `t.status=${p}`, filters.status);
     addFilter(where, values, (p) => `t.priority=${p}`, filters.priority);
     if (filters.origin !== undefined)
@@ -159,10 +160,15 @@ export async function loadReportRecords(pool: DbPool, item: ReportExportJob) {
            ${where.length ? `where ${where.join(" and ")}` : ""}
            order by t.due_date,t.due_time nulls last,t.id limit 10000`;
   } else if (item.report_group === "ACCOUNTS") {
+    const hasPeriodFilter = filters.from !== undefined || filters.to !== undefined;
+    const periodWhere: string[] = [];
+    if (hasPeriodFilter) values.push(item.timezone);
     if (scopeUserId) {
       values.push(scopeUserId);
       where.push(`a.owner_user_id=$${values.length}`);
     }
+    if (hasPeriodFilter) dateFilters("vp.scheduled_at", filters, "$1", periodWhere, values);
+    addFilter(where, values, (p) => `a.id=${p}`, filters.accountId);
     addFilter(where, values, (p) => `a.status=${p}`, filters.status);
     addFilter(where, values, (p) => `a.account_type=${p}`, filters.accountType);
     addFilter(where, values, (p) => `a.country_code=${p}`, filters.countryCode);
@@ -193,6 +199,7 @@ export async function loadReportRecords(pool: DbPool, item: ReportExportJob) {
                   coalesce(pc.full_name,'') contacto_principal,
                   coalesce(pc.phone,pc.email,'') canal_principal,
                   coalesce(fs.frutas,'') frutas,
+                  coalesce(ap.visitas_periodo,0)::text visitas_periodo,
                   coalesce(lv.ultima_visita::text,'') ultima_visita,
                   coalesce(nv.proxima_visita::text,'') proxima_visita
            from commercial_accounts a join users u on u.id=a.owner_user_id
@@ -205,6 +212,10 @@ export async function loadReportRecords(pool: DbPool, item: ReportExportJob) {
              from commercial_account_fruits af join fruits f on f.id=af.fruit_id
              where af.account_id=a.id
            ) fs on true
+           left join lateral (
+             select count(*)::int visitas_periodo from visits vp
+             where vp.account_id=a.id${periodWhere.length ? ` and ${periodWhere.join(" and ")}` : ""}
+           ) ap on true
            left join lateral (
              select max(scheduled_at)::date ultima_visita from visits
              where account_id=a.id and status='COMPLETED'
@@ -223,10 +234,13 @@ export async function loadReportRecords(pool: DbPool, item: ReportExportJob) {
     }
     dateFilters("d.created_at", filters, "$1", where, values);
     addFilter(where, values, (p) => `d.account_id=${p}`, filters.accountId);
+    addFilter(where, values, (p) => `a.owner_user_id=${p}`, filters.responsibleUserId);
+    addFilter(where, values, (p) => `a.city=${p}`, filters.city);
     addFilter(where, values, (p) => `d.category_id=${p}`, filters.categoryId);
     addFilter(where, values, (p) => `d.created_by=${p}`, filters.authorUserId);
     addFilter(where, values, (p) => `d.format=${p}`, filters.format);
-    where.push("d.status<>'DELETED'");
+    addFilter(where, values, (p) => `d.status=${p}`, filters.status);
+    if (filters.status === undefined) where.push("d.status<>'DELETED'");
     if (item.template === "review-due")
       where.push("d.status='AVAILABLE' and d.created_at<now()-interval '1 year'");
     sql =
@@ -252,9 +266,16 @@ export async function loadReportRecords(pool: DbPool, item: ReportExportJob) {
     values.push(item.timezone);
     const visitWhere = ["v.responsible_user_id=u.id"];
     const taskWhere = ["t.responsible_user_id=u.id"];
+    const accountWhere = ["a.owner_user_id=u.id", "a.status='ACTIVE'"];
     dateFilters("v.scheduled_at", filters, "$1", visitWhere, values);
     addFilter(taskWhere, values, (p) => `t.due_date>=${p}::date`, filters.from);
     addFilter(taskWhere, values, (p) => `t.due_date<=${p}::date`, filters.to);
+    addFilter(visitWhere, values, (p) => `v.account_id=${p}`, filters.accountId);
+    addFilter(taskWhere, values, (p) => `t.account_id=${p}`, filters.accountId);
+    addFilter(accountWhere, values, (p) => `a.id=${p}`, filters.accountId);
+    addFilter(visitWhere, values, (p) => `a.city=${p}`, filters.city);
+    addFilter(taskWhere, values, (p) => `a.city=${p}`, filters.city);
+    addFilter(accountWhere, values, (p) => `a.city=${p}`, filters.city);
     addFilter(where, values, (p) => `u.id=${p}`, filters.responsibleUserId);
     sql =
       item.template === "period-activity"
@@ -268,11 +289,13 @@ export async function loadReportRecords(pool: DbPool, item: ReportExportJob) {
            from users u
            join lateral (
              select v.scheduled_at activity_at,'VISIT'::text kind,v.status::text status
-             from visits v where ${visitWhere.join(" and ")}
+              from visits v join commercial_accounts a on a.id=v.account_id
+              where ${visitWhere.join(" and ")}
              union all
              select ((t.due_date+coalesce(t.due_time,time '23:59:59')) at time zone t.timezone),
                     'TASK'::text,t.status::text
-             from tasks t where ${taskWhere.join(" and ")}
+              from tasks t join commercial_accounts a on a.id=t.account_id
+              where ${taskWhere.join(" and ")}
            ) ev on true
            where u.role='SUPERVISOR' and u.status='ACTIVE'${where.length ? ` and ${where.join(" and ")}` : ""}
            group by to_char(ev.activity_at at time zone $1,'YYYY-MM-DD'),u.id,u.full_name
@@ -286,17 +309,19 @@ export async function loadReportRecords(pool: DbPool, item: ReportExportJob) {
            from users u
            cross join lateral (
              select count(*) visitas,count(*) filter(where v.status='COMPLETED') completadas
-             from visits v where ${visitWhere.join(" and ")}
+              from visits v join commercial_accounts a on a.id=v.account_id
+              where ${visitWhere.join(" and ")}
            ) vs
            cross join lateral (
-             select count(*) cuentas_activas from commercial_accounts a
-             where a.owner_user_id=u.id and a.status='ACTIVE'
+              select count(*) cuentas_activas from commercial_accounts a
+              where ${accountWhere.join(" and ")}
            ) ac
            cross join lateral (
              select count(*) filter(where t.status in ('PENDING','IN_PROGRESS')) tareas_abiertas,
                     count(*) filter(where t.status in ('PENDING','IN_PROGRESS')
                       and ((t.due_date+coalesce(t.due_time,time '23:59:59')) at time zone t.timezone)<now()) tareas_vencidas
-             from tasks t where ${taskWhere.join(" and ")}
+              from tasks t join commercial_accounts a on a.id=t.account_id
+              where ${taskWhere.join(" and ")}
            ) ts
            where u.role='SUPERVISOR' and u.status='ACTIVE'${where.length ? ` and ${where.join(" and ")}` : ""}
            order by u.full_name,u.id limit 10000`;

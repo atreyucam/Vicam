@@ -85,6 +85,8 @@ jobs:
           docker compose --env-file infra/env/local.env.example -f compose.yaml config --quiet
           docker compose --env-file infra/env/staging.env.example -f compose.staging.yaml config --quiet
           docker compose --env-file infra/env/production.env.example -f compose.production.yaml config --quiet
+          docker compose --env-file infra/env/staging.env.example -f compose.staging.yaml -f compose.vps.yaml config --quiet
+          docker compose --env-file infra/env/production.env.example -f compose.production.yaml -f compose.vps.yaml config --quiet
 
       - name: Validate Caddy configurations
         run: |
@@ -94,6 +96,12 @@ jobs:
             -e "VICAM_CSP_MAP_CONNECT_SRC=https://api.maptiler.com https://*.maptiler.com" \
             -e "VICAM_CSP_MAP_IMG_SRC=https://api.maptiler.com https://*.maptiler.com" \
             -v "$PWD/infra/caddy/Caddyfile.tls:/etc/caddy/Caddyfile:ro" \
+            caddy:2-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648 \
+            caddy validate --config /etc/caddy/Caddyfile
+          docker run --rm \
+            -e "VICAM_CSP_MAP_CONNECT_SRC=https://api.maptiler.com https://*.maptiler.com" \
+            -e "VICAM_CSP_MAP_IMG_SRC=https://api.maptiler.com https://*.maptiler.com" \
+            -v "$PWD/infra/caddy/Caddyfile.vps:/etc/caddy/Caddyfile:ro" \
             caddy:2-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648 \
             caddy validate --config /etc/caddy/Caddyfile
           docker run --rm \

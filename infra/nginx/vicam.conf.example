@@ -1,0 +1,20 @@
+# Copie un bloque por ambiente en /etc/nginx/sites-available/.
+# Staging: server_name staging.app.vicamproduce.com; proxy_pass ...:18081
+# Producción: server_name app.vicamproduce.com; proxy_pass ...:18082
+server {
+    listen 80;
+    listen [::]:80;
+    server_name REPLACE_WITH_HOST;
+
+    location / {
+        proxy_pass http://127.0.0.1:REPLACE_WITH_LOOPBACK_PORT;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection "";
+        proxy_read_timeout 120s;
+        client_max_body_size 11m;
+    }
+}

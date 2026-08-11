@@ -33,6 +33,14 @@ export async function seedDevelopmentData(pool: Pool): Promise<void> {
       [passwordHashes.manager, passwordHashes.supervisorA, passwordHashes.supervisorB],
     );
     await client.query(
+      `insert into document_categories
+         (id,name,normalized_name,active,created_by,updated_by)
+       values
+         ('60000000-0000-4000-8000-000000000001','General','general',true,
+          '00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000001')
+       on conflict (id) do update set active=true,updated_at=now()`,
+    );
+    await client.query(
       `insert into fruits (id, name, normalized_name, active, created_by, updated_by)
        values
          ('50000000-0000-4000-8000-000000000001', 'Banano', 'banano', true,
