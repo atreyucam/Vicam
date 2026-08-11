@@ -40,7 +40,9 @@
 
 	@api path /api/v1 /api/v1/*
 	handle @api {
-		reverse_proxy api:3000
+		reverse_proxy api:3000 {
+			header_up X-Forwarded-Proto {http.request.header.X-Forwarded-Proto}
+		}
 	}
 
 	handle /runtime/config.js {
@@ -52,4 +54,3 @@
 		reverse_proxy web:4173
 	}
 }
-
