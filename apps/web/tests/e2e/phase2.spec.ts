@@ -242,8 +242,14 @@ test("service worker no guarda API, auth, descargas ni documentos", async ({ pag
       for (const request of await (await caches.open(key)).keys()) urls.push(request.url);
     return urls;
   });
-  expect(cachedUrls.some((url) => /\/api\//.test(url))).toBe(false);
-  expect(cachedUrls.some((url) => /documents|download|auth/.test(url))).toBe(false);
+  const forbiddenCachedUrls = cachedUrls.filter((url) => {
+    const { pathname } = new URL(url);
+    return (
+      /\/api(?:\/|$)/.test(pathname) ||
+      /(?:^|\/)(?:auth|documents?|downloads?)(?:\/|$)/i.test(pathname)
+    );
+  });
+  expect(forbiddenCachedUrls).toEqual([]);
 });
 
 test("cinco PIN incorrectos purgan la bóveda local", async ({ context, page }) => {
