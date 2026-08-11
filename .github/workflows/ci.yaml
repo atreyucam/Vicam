@@ -34,6 +34,11 @@ jobs:
       - name: Install dependencies from lockfile
         run: pnpm install --frozen-lockfile
 
+      - name: Build internal packages required by typed lint
+        run: |
+          pnpm --filter @vicam/contracts build
+          pnpm --filter @vicam/db build
+
       - name: Format
         run: pnpm format
 
