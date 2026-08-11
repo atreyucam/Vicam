@@ -4,7 +4,7 @@ services:
   caddy:
     cap_add:
       - NET_BIND_SERVICE
-    ports: !reset
+    ports: !override
       - "127.0.0.1:${VICAM_LOOPBACK_PORT:?set a unique loopback port}:8080"
     volumes: !override
       - ./infra/caddy/Caddyfile.vps:/etc/caddy/Caddyfile:ro
