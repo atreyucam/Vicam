@@ -1,0 +1,35 @@
+title = "VICAM Gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "generic-api-key"
+
+[[rules.allowlists]]
+description = "Public checksum for the generated compromised-password source"
+condition = "AND"
+regexTarget = "line"
+paths = ['''^apps/api/src/auth/compromised-password-denylist-v[0-9]+\.ts$''']
+regexes = ['''compromisedPasswordSourceSha256''']
+
+[[rules.allowlists]]
+description = "Explicitly fictitious rotated session values in API unit tests"
+condition = "AND"
+regexTarget = "line"
+paths = ['''^apps/web/src/api/api\.test\.ts$''']
+regexes = ['''session\("access-rotado", "csrf-rotado-ficticio-[0-9]+"\)''']
+
+[[rules.allowlists]]
+description = "Explicitly fictitious authentication secret in the Phase 4 integration test"
+condition = "AND"
+regexTarget = "line"
+paths = ['''^apps/api/src/phase4\.integration\.test\.ts$''']
+regexes = ['''AUTH_SECRET: "phase4-test-secret-with-at-least-32-characters"''']
+
+[[rules.allowlists]]
+description = "Semantic idempotency keys used only by the Phase 1 integration test"
+condition = "AND"
+regexTarget = "line"
+paths = ['''^apps/api/src/phase1\.integration\.test\.ts$''']
+regexes = ['''\.set\("idempotency-key", "visit-reschedule-(?:complete|stale)-0001"\)''']
